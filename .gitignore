@@ -403,3 +403,6 @@ output/*
 
 #Ignore the venv
 nrt_env/*
+
+#Ignore html exports
+*.html

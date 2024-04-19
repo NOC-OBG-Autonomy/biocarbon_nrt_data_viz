@@ -16,7 +16,7 @@ If python is a version lower than Python 3.12, consider updating python from the
 
 ## Jupyter Notebook using VSCode
 
-To easily use jupyter notebooks I recommend using [VSCode](https://code.visualstudio.com/), as it support multiple languages, as a version control interface and different terminal integrated.
+To easily use jupyter notebooks I recommend using [VSCode](https://code.visualstudio.com/), as it support multiple languages, has a version control interface and different terminal integrated (We will use bash here).
 
 ## Repo installation
 
@@ -59,7 +59,7 @@ And you're all set up !
 
 ## Running the notebook
 
-The main notebook is Python/notebooks/autonomy_visualization.ipynb
+The main notebook is Python_notebooks/autonomy_visualization.ipynb
 Open it on VSCode and you can either run it entirely or cell by cell. The first part download the latest data of gliders and float, and the next part make some plots. VSCode will ask you to select a python kernel, you must select nrt_env here. 
 A data folder will be created and filled in with the data, you don't need to provide any inputs, except if you don't want to save the data in the repo folder.
 

@@ -59,4 +59,6 @@ def download_float_nc(wmo_list, synth_file, data_directory, floats_directory = '
         filename = wmo_directory + '/' + download_url.rsplit('/', 1)[1]
         urlretrieve(download_url, filename)
         print(wmo + ' NCDF file downloaded')
+
+
     

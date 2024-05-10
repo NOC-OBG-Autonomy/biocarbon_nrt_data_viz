@@ -1,11 +1,9 @@
 #Use this file to set the plotting parameters
 
----
 directories-paths :
   host : 'https://data-argo.ifremer.fr/argo_synthetic-profile_index.txt'
   dac : 'https://data-argo.ifremer.fr/dac'
   repo_directory : 'C:/Users/flapet/OneDrive - NOC/Documents/IDAPro/lib/db_building'
 
-floats_wmo : 4903532
+floats_wmo : '4903532'
 
----

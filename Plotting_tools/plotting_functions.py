@@ -1,8 +1,27 @@
+import pandas as pd
+import numpy as np
+import requests
+import shutil
+import os
+import gzip
+from pathlib import Path
+import re
+from tqdm import tqdm
+from urllib.request import urlretrieve
+import xarray as xr
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import seaborn as sns
+from glob import glob
+from datetime import datetime
+from scipy import interpolate
+
 def extract_digits(text):
     match = re.search(r'\d+', text)
     return match.group() if match else 0
 
 def create_missing_directories():
+    import os
     """Create a data and plot folders if they are missing
     """    
     # Define the path to the parent directory
@@ -43,8 +62,8 @@ def download_float_synth_file(hostname, data_directory):
 
     Synth_path = data_directory + 'Data/synth_file.txt'
 
-    with open(destination, "wb") as f:
-        r = requests.get(host)
+    with open(data_directory, "wb") as f:
+        r = requests.get(hostname)
         f.write(r.content)
 
 def download_float_nc(wmo_list, synth_file, data_directory, floats_directory = 'Data/Floats'):
@@ -60,5 +79,28 @@ def download_float_nc(wmo_list, synth_file, data_directory, floats_directory = '
         urlretrieve(download_url, filename)
         print(wmo + ' NCDF file downloaded')
 
+def load_bathymetry(zip_file_url):
+    """Read zip file from Natural Earth containing bathymetry shapefiles"""
+    # Download and extract shapefiles
+    import io
+    import zipfile
 
-    
+    r = requests.get(zip_file_url)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(bath_directory)
+
+    # Read shapefiles, sorted by depth
+    shp_dict = {}
+    files = glob(bath_directory + '*.shp')
+    assert len(files) > 0
+    files.sort()
+    depths = []
+    for f in files:
+        depth = '-' + f.split('_')[-1].split('.')[0]  # depth from file name
+        depths.append(depth)
+        bbox = (min_lon - 3, max_lon + 3,min_lat - 1, max_lat + 1)  # (x0, y0, x1, y1)
+        nei = shpreader.Reader(f, bbox=bbox)
+        shp_dict[depth] = nei
+    depths = np.array(depths)[::-1]  # sort from surface to bottom
+    return depths, shp_dict
+

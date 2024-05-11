@@ -5,5 +5,12 @@ directories-paths :
   dac : 'https://data-argo.ifremer.fr/dac'
   repo_directory : 'C:/Users/flapet/OneDrive - NOC/Documents/IDAPro/lib/db_building'
 
-floats_wmo : '4903532'
-
+floats_wmo :
+  - '4903532'
+  - '1902637'
+variables_to_plot : 
+  - 'TEMP_ADJUSTED'
+  - 'PSAL_ADJUSTED'
+  - 'CHLA_ADJUSTED'
+  - 'BBP700_ADJUSTED'
+  - 'DOXY_ADJUSTED'

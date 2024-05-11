@@ -20,12 +20,12 @@ def extract_digits(text):
     match = re.search(r'\d+', text)
     return match.group() if match else 0
 
-def create_missing_directories():
+def create_missing_directories(wmo, varlist):
     import os
     """Create a data and plot folders if they are missing
     """    
     # Define the path to the parent directory
-    parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+    parent_dir = os.path.abspath(os.getcwd())
 
     # Check if 'data' folder exists in the parent directory
     data_dir = os.path.join(parent_dir, 'data')
@@ -50,6 +50,35 @@ def create_missing_directories():
         print("'gliders' directory created inside 'data' folder.")
     else:
         print("'gliders' directory already exists inside 'data' folder.")
+
+    # Check if 'output' folder exists in the parent directory
+    output_dir = os.path.join(parent_dir, 'Output')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print("'Output' folder created in the parent directory.")
+    else:
+        print("'Output' folder already exists in the parent directory.")
+    # Check if 'Plots' folder exists in the parent directory
+    plot_dir = os.path.join(output_dir, 'Plots')
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+        print("'Plots' folder created in the Output directory.")
+    else:
+        print("'Plots' folder already exists in the Output directory.")
+    # Check if wmo folder exists in the parent directory
+    wmo_dir = os.path.join(plot_dir, wmo)
+    if not os.path.exists(wmo_dir):
+        os.makedirs(wmo_dir)
+        print(wmo + " folder created in the Plots directory.")
+    else:
+        print(wmo + "folder already exists in the Plots directory.")
+    for var in varlist:
+        var_dir = os.path.join(wmo_dir, var)
+        if not os.path.exists(var_dir):
+            os.makedirs(var_dir)
+            print(var + " folder created in the " + wmo +  " directory.")
+        else:
+            print(var +  " folder already exists in the " + wmo +  " directory.")
 
 def download_float_synth_file(hostname, data_directory):
     """Download the BGC Argo synthetic file index
@@ -104,3 +133,52 @@ def load_bathymetry(zip_file_url):
     depths = np.array(depths)[::-1]  # sort from surface to bottom
     return depths, shp_dict
 
+def open_floatnc(wmo):
+    """Retrun a pandas dataframe from the Sprof NC of the wmo provided
+
+    Args:
+        wmo (str): Float WMO
+
+    Returns:
+        pandas dataframe: a df with all the float variables necessary to plotting
+    """    
+    float_filename = 'Data/Floats/' + wmo + '_Sprof.nc'
+    dat = xr.open_dataset(float_filename)
+    df = dat[['JULD', 'PRES_ADJUSTED', 'TEMP_ADJUSTED', 'PSAL_ADJUSTED', 'CHLA_ADJUSTED', 'BBP700_ADJUSTED', 'DOXY_ADJUSTED']].to_dataframe()
+    dat.close()
+    df = df.reset_index().set_index('JULD', drop=False)
+    return df
+
+def plot_profile(data, varname, xmax, float_wmo):
+
+    import math
+    last_date = max(data['JULD'])
+
+    last_df = data[data['JULD'] == last_date]
+    early_df = data[data['JULD'] != last_date]
+
+    if len(early_df.index) > 0 :
+        alphas = (early_df['N_PROF'] + 1 - min(early_df['N_PROF']) + 1)/(max(early_df['N_PROF']) + 1 - min(early_df['N_PROF']) + 1)
+
+        fig = plt.figure(figsize=(20, 10))
+        ax = fig.add_subplot()
+
+        sc2 = ax.scatter( early_df[varname], - (early_df['PRES_ADJUSTED']), alpha = alphas, c = 'grey')
+        sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
+
+        ax.set_xlim(right = xmax)
+
+        # set the plot title
+        ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
+    else :
+        fig = plt.figure(figsize=(20, 10))
+        ax = fig.add_subplot()
+
+        sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
+        ax.set_xlim(right = xmax)
+        ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + "first profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
+    #set the plot filename
+    filename = 'Output/Plots/' + float_wmo + '/' + varname + '/' + str(last_df['N_PROF'].unique()[0]) + '_' + float_wmo + '_' + varname + '.png'
+    print(filename)
+    plt.savefig(filename)
+    plt.close()

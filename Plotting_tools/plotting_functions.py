@@ -182,3 +182,5 @@ def plot_profile(data, varname, xmax, float_wmo):
     print(filename)
     plt.savefig(filename)
     plt.close()
+
+    

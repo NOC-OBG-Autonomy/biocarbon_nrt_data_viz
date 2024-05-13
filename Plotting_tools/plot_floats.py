@@ -45,16 +45,21 @@ for float_wmo in floats_list:
     urlretrieve(download_url, filename)
 
     df = fn.open_floatnc(float_wmo)
+    print(df.head())
 
     #ploat the float profiles
     for var in varlist:
         max_df = df.replace([np.inf, -np.inf], np.nan)  # Convert inf to NaN
-        max_df = max_df.dropna() 
-        xmax = max(max_df[var])
-        if var == 'CHLA_ADJUSTED':
-            xmax = 1.5
-        elif var == 'BBP700_ADJSUTED':
-            xmax = 0.005
-        for prof in df['N_PROF'].unique():
-            data_to_plot = df[df['N_PROF'] <= prof]
-            fn.plot_profile(data_to_plot, var, xmax, float_wmo)
+        var_series = max_df[var]
+        var_series = var_series.dropna()
+        if len(var_series) == 0:
+            print(var + " has only NA values")
+        else :    
+            xmax = max(var_series)
+            if var == 'CHLA_ADJUSTED':
+                xmax = 1.5
+            if var == 'BBP700_ADJSUTED':
+                xmax = 0.005
+            for prof in df['N_PROF'].unique():
+                data_to_plot = df[df['N_PROF'] <= prof]
+                fn.plot_profile(data_to_plot, var, xmax, float_wmo)

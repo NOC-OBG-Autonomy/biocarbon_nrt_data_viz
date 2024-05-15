@@ -9,8 +9,8 @@ floats_wmo :
   - '1902637'
   - '4903532'
 variables_to_plot : 
-  - 'TEMP_ADJUSTED'
-  - 'PSAL_ADJUSTED'
-  - 'CHLA_ADJUSTED'
-  - 'BBP700_ADJUSTED'
-  - 'DOXY_ADJUSTED'
+  - 'TEMP'
+  - 'PSAL'
+  - 'CHLA'
+  - 'BBP700'
+  - 'DOXY'

@@ -133,7 +133,7 @@ def load_bathymetry(zip_file_url):
     depths = np.array(depths)[::-1]  # sort from surface to bottom
     return depths, shp_dict
 
-def open_floatnc(wmo):
+def open_floatnc(wmo, varlist):
     """Retrun a pandas dataframe from the Sprof NC of the wmo provided
 
     Args:
@@ -144,12 +144,14 @@ def open_floatnc(wmo):
     """    
     float_filename = 'Data/Floats/' + wmo + '_Sprof.nc'
     dat = xr.open_dataset(float_filename)
-    df = dat[['JULD', 'PRES_ADJUSTED', 'TEMP_ADJUSTED', 'PSAL_ADJUSTED', 'CHLA_ADJUSTED', 'BBP700_ADJUSTED', 'DOXY_ADJUSTED']].to_dataframe()
+    varlist.append('JULD')
+    varlist.append('PRES')
+    df = dat[varlist].to_dataframe()
     dat.close()
     df = df.reset_index().set_index('JULD', drop=False)
     return df
 
-def plot_profile(data, varname, xmax, float_wmo):
+def plot_profile(data, varname, xmax, float_wmo, pres_adjusted):
 
     import math
     last_date = max(data['JULD'])
@@ -157,28 +159,53 @@ def plot_profile(data, varname, xmax, float_wmo):
     last_df = data[data['JULD'] == last_date]
     early_df = data[data['JULD'] != last_date]
 
-    if len(early_df.index) > 0 :
-        alphas = (early_df['N_PROF'] + 1 - min(early_df['N_PROF']) + 1)/(max(early_df['N_PROF']) + 1 - min(early_df['N_PROF']) + 1)
+    
+    if pres_adjusted == True:
+        if len(early_df.index) > 0 :
+            alphas = (early_df['N_PROF'] + 1 - min(early_df['N_PROF']) + 1)/(max(early_df['N_PROF']) + 1 - min(early_df['N_PROF']) + 1)
 
-        fig = plt.figure(figsize=(20, 10))
-        ax = fig.add_subplot()
+            fig = plt.figure(figsize=(20, 10))
+            ax = fig.add_subplot()
 
-        sc2 = ax.scatter( early_df[varname], - (early_df['PRES_ADJUSTED']), alpha = alphas, c = 'grey')
-        sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
+            sc2 = ax.scatter( early_df[varname], - (early_df['PRES_ADJUSTED']), alpha = alphas, c = 'grey')
+            sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
 
-        ax.set_xlim(right = xmax)
+            ax.set_xlim(right = xmax)
 
-        # set the plot title
-        ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
-    else :
-        fig = plt.figure(figsize=(20, 10))
-        ax = fig.add_subplot()
+            # set the plot title
+            ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
+        else :
+            fig = plt.figure(figsize=(20, 10))
+            ax = fig.add_subplot()
 
-        sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
-        ax.set_xlim(right = xmax)
-        ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + "first profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
-    #set the plot filename
-    filename = 'Output/Plots/' + float_wmo + '/' + varname + '/' + str(last_df['N_PROF'].unique()[0]) + '_' + float_wmo + '_' + varname + '.png'
+            sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
+            ax.set_xlim(right = xmax)
+            ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + "first profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
+        #set the plot filename
+        filename = 'Output/Plots/' + float_wmo + '/' + varname + '/' + str(last_df['N_PROF'].unique()[0]) + '_' + float_wmo + '_' + varname + '.png'
+    else:
+        if len(early_df.index) > 0 :
+            alphas = (early_df['N_PROF'] + 1 - min(early_df['N_PROF']) + 1)/(max(early_df['N_PROF']) + 1 - min(early_df['N_PROF']) + 1)
+
+            fig = plt.figure(figsize=(20, 10))
+            ax = fig.add_subplot()
+
+            sc2 = ax.scatter( early_df[varname], - (early_df['PRES']), alpha = alphas, c = 'grey')
+            sc = ax.scatter( last_df[varname], - (last_df['PRES']), c = 'black')
+
+            ax.set_xlim(right = xmax)
+
+            # set the plot title
+            ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
+        else :
+            fig = plt.figure(figsize=(20, 10))
+            ax = fig.add_subplot()
+
+            sc = ax.scatter( last_df[varname], - (last_df['PRES']), c = 'black')
+            ax.set_xlim(right = xmax)
+            ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + "first profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
+        #set the plot filename
+        filename = 'Output/Plots/' + float_wmo + '/' + varname + '/' + str(last_df['N_PROF'].unique()[0]) + '_' + float_wmo + '_' + varname + '.png'
     print(filename)
     plt.savefig(filename)
     plt.close()

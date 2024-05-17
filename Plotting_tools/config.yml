@@ -12,5 +12,13 @@ variables_to_plot :
   - 'TEMP'
   - 'PSAL'
   - 'CHLA'
+  - 'CHLA_ADJUSTED'
   - 'BBP700'
   - 'DOXY'
+
+products_to_plot :
+  - High_res : True
+
+var_to_plot :
+ - SST
+ - Chla

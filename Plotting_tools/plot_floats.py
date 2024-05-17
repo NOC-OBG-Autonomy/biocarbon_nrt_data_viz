@@ -19,7 +19,7 @@ varlist = config['variables_to_plot']
 #download the bio index file, which provide dac paths for downloading float data
 floats_list = config['floats_wmo']
 
-#fn.download_float_synth_file(paths['host'], 'Data/Floats/synth.txt')
+fn.download_float_synth_file(paths['host'], 'Data/Floats/synth.txt')
 index_table = pl.read_csv('Data/Floats/synth.txt', skip_rows=8)
 
 # Mutate a new column based on the regular expression extraction
@@ -41,7 +41,7 @@ for float_wmo in floats_list:
     download_url = dac + '/' + dac_name + '/' + float_wmo + '/' + float_wmo + '_Sprof.nc'
 
     filename = local_argo_directory + '/' + download_url.rsplit('/', 1)[1]
-    #urlretrieve(download_url, filename)
+    urlretrieve(download_url, filename)
 
     df = fn.open_floatnc(float_wmo, varlist)
     vartoplot = config['variables_to_plot']
@@ -64,5 +64,6 @@ for float_wmo in floats_list:
             if var == 'BBp700':
                 xmax == 0.005
             for prof in df['N_PROF'].unique():
-                data_to_plot = df[df['N_PROF'] <= prof]
-                fn.plot_profile(data_to_plot, var, xmax, float_wmo, pres_adjusted = False)
+                if prof > 40:
+                    data_to_plot = df[df['N_PROF'] <= prof]
+                    fn.plot_profile(data_to_plot, var, xmax, float_wmo, pres_adjusted = False)

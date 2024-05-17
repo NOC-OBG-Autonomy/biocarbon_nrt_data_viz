@@ -170,7 +170,7 @@ def plot_profile(data, varname, xmax, float_wmo, pres_adjusted):
             sc2 = ax.scatter( early_df[varname], - (early_df['PRES_ADJUSTED']), alpha = alphas, c = 'grey')
             sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
 
-            ax.set_xlim(right = xmax)
+            ax.set_xlim(0, xmax)
 
             # set the plot title
             ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
@@ -179,7 +179,7 @@ def plot_profile(data, varname, xmax, float_wmo, pres_adjusted):
             ax = fig.add_subplot()
 
             sc = ax.scatter( last_df[varname], - (last_df['PRES_ADJUSTED']), c = 'black')
-            ax.set_xlim(right = xmax)
+            ax.set_xlim(0, xmax)
             ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + "first profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))
         #set the plot filename
         filename = 'Output/Plots/' + float_wmo + '/' + varname + '/' + str(last_df['N_PROF'].unique()[0]) + '_' + float_wmo + '_' + varname + '.png'
@@ -193,7 +193,8 @@ def plot_profile(data, varname, xmax, float_wmo, pres_adjusted):
             sc2 = ax.scatter( early_df[varname], - (early_df['PRES']), alpha = alphas, c = 'grey')
             sc = ax.scatter( last_df[varname], - (last_df['PRES']), c = 'black')
 
-            ax.set_xlim(right = xmax)
+            ax.set_xlim(0, xmax)
+            ax.set_ylim(-250, 0)
 
             # set the plot title
             ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))

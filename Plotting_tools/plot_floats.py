@@ -45,6 +45,7 @@ for float_wmo in floats_list:
 
     df = fn.open_floatnc(float_wmo, varlist)
     vartoplot = config['variables_to_plot']
+    print(vartoplot)
 
     #ploat the float profiles
     for var in vartoplot:
@@ -64,6 +65,6 @@ for float_wmo in floats_list:
             if var == 'BBp700':
                 xmax == 0.005
             for prof in df['N_PROF'].unique():
-                if prof > 40:
+                if prof > 35:
                     data_to_plot = df[df['N_PROF'] <= prof]
                     fn.plot_profile(data_to_plot, var, xmax, float_wmo, pres_adjusted = False)

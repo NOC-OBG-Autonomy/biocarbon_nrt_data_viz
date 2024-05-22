@@ -103,7 +103,7 @@ def download_float_nc(wmo_list, synth_file, data_directory, floats_directory = '
     for wmo in wmo_list:
         wmo_table = index_table.filter(pl.col('wmo') == wmo)
         dac_name = wmo_table['file'][0].split('/', 1)[0]
-        download_url = dac + '/' + dac_name + '/' + wmo + '/' + wmo + '_Sprof.nc'
+        download_url = dac + '\\' + dac_name + '\\' + wmo + '\\' + wmo + '_Sprof.nc'
         filename = wmo_directory + '/' + download_url.rsplit('/', 1)[1]
         urlretrieve(download_url, filename)
         print(wmo + ' NCDF file downloaded')

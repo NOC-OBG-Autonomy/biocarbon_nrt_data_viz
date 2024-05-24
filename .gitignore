@@ -406,3 +406,6 @@ nrt_env/*
 
 #Ignore html exports
 *.html
+
+#Ignore token credentials
+C2_api/config.py

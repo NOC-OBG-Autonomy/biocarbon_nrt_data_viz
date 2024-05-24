@@ -1,5 +1,5 @@
 import requests
-def get_position(token, platform_type, platform_serial):
+def get_positions(token, platform_type, platform_serial):
     api_url = "https://api.c2.noc.ac.uk/positions/positions" 
 
 
@@ -19,18 +19,24 @@ def get_position(token, platform_type, platform_serial):
     # Check the status code of the response
     if response.status_code == 200:
         # Successful request
-        data = response.json()  # Parse the JSON response
-        return(data)
+        data = response.json()
+        return(data[0])
     else:
         # Handle errors
         print(f"Error: {response.status_code}")
         print(response.text)
 
-def get_positions(id):
-    ...
+def convert_positions(json_pos):
+    import pandas as pd
+    data = pd.DataFrame(json_pos)
+    my_pos = data['positions'][0]
+    data_cleaned = pd.DataFrame(my_pos)
+    return(data_cleaned)
 
 
 if __name__ == '__main__':
     import config
-    positions = get_position(config.token, platform_type = "slocum", platform_serial = "unit_306")
+    positions = get_positions(config.token, platform_type = "slocum", platform_serial = "unit_306")
+    position_df = convert_positions(positions)
+    print(position_df)
 

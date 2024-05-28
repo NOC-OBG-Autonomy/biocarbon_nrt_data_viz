@@ -1,4 +1,13 @@
 import requests
+import re
+import config
+import pandas as pd
+from datetime import datetime
+import json
+import paho.mqtt.client as mqtt
+import time
+import os
+from glob import glob
 def get_positions(token, platform_type, platform_serial):
     api_url = "https://api.c2.noc.ac.uk/positions/positions" 
 
@@ -29,7 +38,7 @@ def get_positions(token, platform_type, platform_serial):
 def convert_positions(json_pos):
     import pandas as pd
     data = pd.DataFrame(json_pos)
-    my_pos = data['positions'][0]
+    my_pos = data['positions'].iloc[0]
     data_cleaned = pd.DataFrame(my_pos)
     return(data_cleaned)
 
@@ -138,43 +147,73 @@ def json_to_csv_pos(filename):
     position_df = pd.DataFrame([position_info])
     return(position_df)
 
-if __name__ == '__main__':
-    import re
-    import config
-    import pandas as pd
-    from datetime import datetime
-    import json
-    import paho.mqtt.client as mqtt
-    import time
-    import os
-    from glob import glob
-    #positions = get_positions(config.token, platform_type = "slocum", platform_serial = "unit_306")
-    #position_df = convert_positions(positions)
-    #print(position_df)
-    # Configuration du broker MQTT
-    # Initialisation du client MQTT
-    #client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    #client.username_pw_set(config.username, config.password)
-    #client.on_connect = mqtt_connect
-    #client.on_message = download_data
+def read_cts_datetime(filepath):
+    with open(filepath, 'r') as file:
+        file_content = file.read()
+    datetime_pattern = r'UTC=3D(\d{2}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})'
 
-    # Connexion to the broker
-    #client.connect(config.broker, config.port, 60)
-
-    # Start the network loop in a separate thread
-    #client.loop_start()
-
-    # Collect data for 10 seconds
-    #time.sleep(10)
-
-    # Stop the network loop and disconnect
-    #client.loop_stop()
-    #client.disconnect()
-
-    my_files = glob('Data/Ship_position/raw_msg/*')
-    ship_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
-    for file in my_files:
-        temp_df = json_to_csv_pos(file)
-        ship_position = pd.concat([ship_position, temp_df], ignore_index=True)
+    match = re.search(datetime_pattern, file_content)
     
-    ship_position.to_csv('Data/Ship_position/compiled.csv')
+    if not match:
+        raise ValueError(f"No datetime found in the file : {file_content}")
+
+    date_str = match.group(1)
+    time_str = match.group(2)
+
+    # Combine date and time strings
+    datetime_str = date_str + ' ' + time_str
+    
+    # Convert the combined string to a datetime object
+    dt = pd.to_datetime(datetime_str)
+    return(dt)
+
+def read_cts_position(filepath):
+    with open(filepath, 'r') as file:
+        file_content = file.read()
+    
+    pattern = r'Lat=3D(?P<lat>\d{2})(?P<lat_min>\d{2}\.\d+)(?P<lat_dir>[NS]) Long=3D(?P<lon>\d{3})(?P<lon_min>\d{2}\.\d+)(?P<lon_dir>[EW])'
+    
+    match = re.search(pattern, file_content)
+    
+    if not match:
+        raise ValueError("Invalid CTS5 format")
+    
+    # Extract latitude and longitude parts
+    lat_deg = int(match.group('lat'))
+    lat_min = float(match.group('lat_min'))
+    lat_dir = match.group('lat_dir')
+    
+    lon_deg = int(match.group('lon'))
+    lon_min = float(match.group('lon_min'))
+    lon_dir = match.group('lon_dir')
+    
+    # Convert to decimal degrees
+    lat_decimal = convert_to_decimal(lat_deg, lat_min)
+    lon_decimal = convert_to_decimal(lon_deg, lon_min)
+    
+    # Adjust for direction
+    if lat_dir == 'S':
+        lat_decimal = -lat_decimal
+    if lon_dir == 'W':
+        lon_decimal = -lon_decimal
+    
+    return lat_decimal, lon_decimal
+
+def email_to_csv_pos(email_path):
+    date = read_cts_datetime(email_path)
+    lat, lon  = read_cts_position(email_path)
+
+    position_info = {
+    'date': date,
+    'lon': lon,
+    'lat': lat,
+    'platform_type': 'Float',
+    'platform_id': email_path[-17:-7]
+    }
+    position_df = pd.DataFrame([position_info])
+    return(position_df)
+
+if __name__ == '__main__':
+
+    test_df = email_to_csv_pos('Data/Floats/cts5_emails/lovuse026d_00.txt')
+    print(test_df.head())

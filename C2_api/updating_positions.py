@@ -12,26 +12,31 @@ from api_modules import *
 ############################################
 ######### Glider Position ##################
 ############################################
+gliders_id_list = ['unit_397', 'unit_405', 'unit_398', 'unit_345']
+glider_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
 
-positions = get_positions(config.token, platform_type = "slocum", platform_serial = "unit_397")
-position_df = convert_positions(positions)
+for glider_id in gliders_id_list :
+    positions = get_positions(config.token, platform_type = "slocum", platform_serial = glider_id)
+    position_df = convert_positions(positions)
 
-#recent_position = position_df.head(7)
+    #recent_position = position_df.head(7)
 
-glider_data = []
-for _, row in position_df.iterrows():
-    date_row = pd.to_datetime(row['time'])
-    if date_row > pd.to_datetime('2024-01-27T00:00:00Z'):
-        glider_data.append({
-            'date': date_row,
-            'lon': row['longitude'],
-            'lat': row['latitude'],
-            'platform_type': 'glider',
-            'platform_id': 'unit_397'
-        })
+    glider_data = []
+    for _, row in position_df.iterrows():
+        date_row = pd.to_datetime(row['time'])
+        if date_row > pd.to_datetime('2024-05-27T00:00:00Z'):
+            glider_data.append({
+                'date': date_row.strftime('%Y-%m-%d %H:%M:%S'),
+                'lon': row['longitude'],
+                'lat': row['latitude'],
+                'platform_type': 'glider',
+                'platform_id': glider_id
+            })
 
-# Convert the list of dictionaries to a DataFrame
-glider_position = pd.DataFrame(glider_data)
+    # Convert the list of dictionaries to a DataFrame
+    glider_temp_position = pd.DataFrame(glider_data)
+    glider_position = pd.concat([glider_position if not glider_position.empty else None, glider_temp_position], ignore_index=True)
+    print(f'retrieved {glider_id} position')
 
 print(f'Glider position updated and formatted')
 
@@ -49,14 +54,14 @@ client.on_message = download_data
 client.connect(config.broker, config.port, 60)
 
 # Start the network loop in a separate thread
-#client.loop_start()
+client.loop_start()
 
-# Collect data for 10 seconds
-#time.sleep(1)
+# Collect data for 1 seconds
+time.sleep(1)
 
 #Stop the network loop and disconnect
-#client.loop_stop()
-#client.disconnect()
+client.loop_stop()
+client.disconnect()
 
 #########################################
 ###  Ship Position dataframe     ########

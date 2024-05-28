@@ -3,7 +3,7 @@
 clear
 home_folder = 'C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/'
 
-fname = 'navis_102';
+fname = 'navis_101';
 
 in_folder = [home_folder 'Data/navis/' fname '/raw/'];
 csv_folder = [home_folder 'Data/navis/' fname '/csv_files/'];

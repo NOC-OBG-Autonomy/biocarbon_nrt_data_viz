@@ -32,6 +32,8 @@ for glider_id in gliders_id_list :
                 'platform_type': 'glider',
                 'platform_id': glider_id
             })
+        else:
+            break
 
     # Convert the list of dictionaries to a DataFrame
     glider_temp_position = pd.DataFrame(glider_data)

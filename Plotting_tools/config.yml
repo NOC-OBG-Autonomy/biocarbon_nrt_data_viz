@@ -8,6 +8,8 @@ directories-paths :
 floats_wmo :
   - '1902637'
   - '4903532'
+  - 'navis101'
+  - 'navis102'
 variables_to_plot : 
   - 'TEMP'
   - 'PSAL'
@@ -15,6 +17,8 @@ variables_to_plot :
   - 'CHLA_ADJUSTED'
   - 'BBP700'
   - 'DOXY'
+
+plot_navis : True
 
 products_to_plot :
   - High_res : True

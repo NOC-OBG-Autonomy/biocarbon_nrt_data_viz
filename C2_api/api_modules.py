@@ -41,7 +41,7 @@ def mqtt_connect(client, userdata, flags, rc, properties):
         print("Failes to connect, error:", rc)
 
 def download_data(client, userdata, msg):
-    print(f"Message reçu sur {msg.topic}: {msg.payload.decode()}")
+    print(f"Message received from {msg.topic}: {msg.payload.decode()}")
     
     data = {
         "timestamp": [datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
@@ -50,7 +50,7 @@ def download_data(client, userdata, msg):
     }
     df = pd.DataFrame(data)
     
-    # Convertir le DataFrame en JSON
+    #Convert df into json
     json_data = df.to_json(orient='records', lines=True)
     
     filename = f"mqtt_message_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -58,9 +58,88 @@ def download_data(client, userdata, msg):
     with open(path_to_save, 'w') as file:
         file.write(json_data)
     
-    print(f"Message sauvegardé dans {path_to_save}")
+    print(f"Message saved in {path_to_save}")
+
+def extract_datetime(filename):
+    
+    datetime_pattern = r'(\d{8})_(\d{6})'
+
+    match = re.search(datetime_pattern, filename)
+    
+    if not match:
+        raise ValueError(f"No datetime found in the filename: {filename}")
+
+    date_str = match.group(1)
+    time_str = match.group(2)
+    
+    # Combine date and time strings
+    datetime_str = date_str + time_str
+    
+    # Convert the combined string to a datetime object
+    dt = pd.to_datetime(datetime_str)
+    return(dt)
+
+
+def convert_to_decimal(degrees, minutes):
+    """Convert degrees and minutes to decimal degrees."""
+    return degrees + (minutes / 60)
+
+
+def extract_lonlat(json_string):
+    """Parse GPGGA string to extract and convert latitude and longitude."""
+    # Define regex pattern to match GPGGA string
+    pattern = r'\$GPGGA,\d+\.\d+,(?P<lat>\d{2})(?P<lat_min>\d{2}\.\d+),(?P<lat_dir>[NS]),(?P<lon>\d{3})(?P<lon_min>\d{2}\.\d+),(?P<lon_dir>[EW])'
+    
+    match = re.search(pattern, json_string)
+    
+    if not match:
+        raise ValueError("Invalid GPGGA string format")
+    
+    # Extract latitude and longitude parts
+    lat_deg = int(match.group('lat'))
+    lat_min = float(match.group('lat_min'))
+    lat_dir = match.group('lat_dir')
+    
+    lon_deg = int(match.group('lon'))
+    lon_min = float(match.group('lon_min'))
+    lon_dir = match.group('lon_dir')
+    
+    # Convert to decimal degrees
+    lat_decimal = convert_to_decimal(lat_deg, lat_min)
+    lon_decimal = convert_to_decimal(lon_deg, lon_min)
+    
+    # Adjust for direction
+    if lat_dir == 'S':
+        lat_decimal = -lat_decimal
+    if lon_dir == 'W':
+        lon_decimal = -lon_decimal
+    
+    return lat_decimal, lon_decimal
+
+def json_to_csv_pos(filename):
+
+    date = extract_datetime(filename)
+
+    # Open and read the JSON file
+    with open(filename, 'r') as file:
+        data = json.load(file)
+
+    # Extract the "message" variable
+    message = data.get('message')
+
+    lat, lon = extract_lonlat(message)
+    position_info = {
+    'date': date,
+    'lon': lon,
+    'lat': lat,
+    'platform_type': 'Ship',
+    'platform_id': 'Discovery'
+    }
+    position_df = pd.DataFrame([position_info])
+    return(position_df)
 
 if __name__ == '__main__':
+    import re
     import config
     import pandas as pd
     from datetime import datetime
@@ -68,25 +147,34 @@ if __name__ == '__main__':
     import paho.mqtt.client as mqtt
     import time
     import os
+    from glob import glob
     #positions = get_positions(config.token, platform_type = "slocum", platform_serial = "unit_306")
     #position_df = convert_positions(positions)
     #print(position_df)
     # Configuration du broker MQTT
     # Initialisation du client MQTT
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    client.username_pw_set(config.username, config.password)
-    client.on_connect = mqtt_connect
-    client.on_message = download_data
+    #client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    #client.username_pw_set(config.username, config.password)
+    #client.on_connect = mqtt_connect
+    #client.on_message = download_data
 
     # Connexion to the broker
-    client.connect(config.broker, config.port, 60)
+    #client.connect(config.broker, config.port, 60)
 
     # Start the network loop in a separate thread
-    client.loop_start()
+    #client.loop_start()
 
     # Collect data for 10 seconds
-    time.sleep(10)
+    #time.sleep(10)
 
     # Stop the network loop and disconnect
-    client.loop_stop()
-    client.disconnect()
+    #client.loop_stop()
+    #client.disconnect()
+
+    my_files = glob('Data/Ship_position/raw_msg/*')
+    ship_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
+    for file in my_files:
+        temp_df = json_to_csv_pos(file)
+        ship_position = pd.concat([ship_position, temp_df], ignore_index=True)
+    
+    ship_position.to_csv('Data/Ship_position/compiled.csv')

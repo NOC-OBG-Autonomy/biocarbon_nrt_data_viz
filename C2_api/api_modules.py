@@ -69,20 +69,20 @@ def download_data(client, userdata, msg):
     
     print(f"Message saved in {path_to_save}")
 
-def extract_datetime(filename):
+def extract_datetime(json_string):
     
-    datetime_pattern = r'(\d{8})_(\d{6})'
+    datetime_pattern = r'(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})'
 
-    match = re.search(datetime_pattern, filename)
+    match = re.search(datetime_pattern, json_string)
     
     if not match:
-        raise ValueError(f"No datetime found in the filename: {filename}")
+        raise ValueError(f"No datetime found in the filename: {jsom_string}")
 
     date_str = match.group(1)
     time_str = match.group(2)
     
     # Combine date and time strings
-    datetime_str = date_str + time_str
+    datetime_str = date_str + ' ' + time_str
     
     # Convert the combined string to a datetime object
     dt = pd.to_datetime(datetime_str)
@@ -127,15 +127,13 @@ def extract_lonlat(json_string):
 
 def json_to_csv_pos(filename):
 
-    date = extract_datetime(filename)
-
     # Open and read the JSON file
     with open(filename, 'r') as file:
         data = json.load(file)
 
     # Extract the "message" variable
     message = data.get('message')
-
+    date = extract_datetime(message)
     lat, lon = extract_lonlat(message)
     position_info = {
     'date': date,

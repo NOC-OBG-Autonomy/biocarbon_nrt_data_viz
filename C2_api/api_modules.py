@@ -162,7 +162,7 @@ def read_cts_datetime(filepath):
     datetime_str = date_str + ' ' + time_str
     
     # Convert the combined string to a datetime object
-    dt = pd.to_datetime(datetime_str)
+    dt = pd.to_datetime(datetime_str, format = '%y-%m-%d %H:%M:%S')
     return(dt)
 
 def read_cts_position(filepath):
@@ -211,7 +211,35 @@ def email_to_csv_pos(email_path):
     position_df = pd.DataFrame([position_info])
     return(position_df)
 
+def get_observations(token, platform_type, platform_serial):
+    api_url = "https://api.c2.noc.ac.uk/timeseries/observations/csv" 
+
+
+    # Headers including the token
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    params = {
+    "platform_type": platform_type,
+    "platform_serial": platform_serial,
+    "from": "2024-05-28T18:57"
+    }
+
+    # Making my query
+    response = requests.get(api_url, headers=headers, params = params)
+
+    # Check the status code of the response
+    if response.status_code == 200:
+        # Successful request
+        data = response.json()
+        return(data[0])
+    else:
+        # Handle errors
+        print(f"Error: {response.status_code}")
+        print(response.text)
+
 if __name__ == '__main__':
 
-    test_df = email_to_csv_pos('Data/Floats/cts5_emails/lovuse026d_00.txt')
-    print(test_df.head())
+   # test = get_observations(config.token, 'slocum', 'unit_397')
+    test_df = pd.DataFrame(test)

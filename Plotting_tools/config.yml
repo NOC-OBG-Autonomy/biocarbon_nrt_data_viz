@@ -6,7 +6,6 @@ directories-paths :
   repo_directory : 'C:/Users/flapet/OneDrive - NOC/Documents/IDAPro/lib/db_building'
 
 floats_wmo :
-  - '1902637'
   - '4903532'
 variables_to_plot : 
   - 'TEMP'
@@ -15,10 +14,3 @@ variables_to_plot :
   - 'CHLA_ADJUSTED'
   - 'BBP700'
   - 'DOXY'
-
-products_to_plot :
-  - High_res : True
-
-var_to_plot :
- - SST
- - Chla

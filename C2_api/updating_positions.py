@@ -87,12 +87,41 @@ for file in my_files:
     floats_position = pd.concat([floats_position if not floats_position.empty else None, temp_df], ignore_index=True)
 
 print(f'Float position updated and formatted')
+
+
+###########################################
+########### Respire dataframe ############
+##########################################
+
+respire = pd.read_csv('Data/Respire/raw_location_respire.csv')
+input_format = '%b %d %Y %I:%M:%S.%f %p'
+
+respire['Datetime'] = pd.to_datetime(respire['Timestamp'], format=input_format)
+
+# Ensure microseconds are dropped by converting to string and back to datetime without microseconds
+respire['Datetime'] = respire['Datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
+respire['Datetime'] = pd.to_datetime(respire['Datetime'], format='%Y-%m-%d %H:%M:%S')
+
+
+respire_sel = respire[['Datetime', 'Longitude', 'Latitude']]
+
+colnames = ['date', 'lon', 'lat']
+
+respire_sel.columns = colnames
+
+respire_sel = respire_sel.copy()
+
+respire_sel.loc[:,'platform_type'] = 'respire'
+respire_sel.loc[:,'platform_id'] = 'respire'
+
+print(f'respire position formatted')
 ##########################################
 ######## Bind all the positions df #######
 ##########################################
 
 combined_position = pd.concat([ship_position, glider_position])
 combined_position = pd.concat([combined_position, floats_position])
+combined_position = pd.concat([combined_position, respire_sel])
 
 combined_position.to_csv('Plotting_tools/shared_data/rt_positions.csv')
 

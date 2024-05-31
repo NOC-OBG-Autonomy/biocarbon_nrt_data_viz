@@ -194,7 +194,7 @@ def plot_profile(data, varname, xmax, float_wmo, pres_adjusted):
             sc = ax.scatter( last_df[varname], - (last_df['PRES']), c = 'black')
 
             ax.set_xlim(0, xmax)
-            ax.set_ylim(-250, 0)
+            ax.set_ylim(-1000, 0)
 
             # set the plot title
             ax.set_title('Float wmo : ' + float_wmo + "\n" + varname + " profile : " + last_date.strftime("%Y-%m-%d %H:%M:%S"))

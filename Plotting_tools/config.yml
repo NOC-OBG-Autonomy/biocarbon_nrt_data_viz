@@ -6,7 +6,7 @@ directories-paths :
   repo_directory : 'C:/Users/flapet/OneDrive - NOC/Documents/IDAPro/lib/db_building'
 
 floats_wmo :
-  - '4903532'
+  - '1902637'
 variables_to_plot : 
   - 'TEMP'
   - 'PSAL'

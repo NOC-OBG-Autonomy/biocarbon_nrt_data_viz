@@ -244,5 +244,5 @@ def get_observations(token, platform_type, platform_serial, variables):
 
 if __name__ == '__main__':
 
-    test = get_observations(config.token, 'slocum', 'unit_397', variables = ["m_water_vy", "m_water_vx", "m_final_water_vx", "m_final_water_vy"])
-    test.to_csv('response.csv')
+    test = get_observations(config.token, 'slocum', ['unit_397', 'unit_405', 'unit_398', 'unit_345'], variables = ["m_water_vy", "m_water_vx", "m_lat", "m_lon", "m_time"])
+    test.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/current.csv')

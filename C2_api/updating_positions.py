@@ -45,25 +45,25 @@ print(f'Glider position updated and formatted')
 ############################################
 ########## Ship position update ############
 ############################################
-
+if config.vpn_access == True:
 # CConfiguration of the MQTT broker
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-client.username_pw_set(config.username, config.password)
-client.on_connect = mqtt_connect
-client.on_message = download_data
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    client.username_pw_set(config.username, config.password)
+    client.on_connect = mqtt_connect
+    client.on_message = download_data
 
-# Connexion to the broker
-client.connect(config.broker, config.port, 60)
+    # Connexion to the broker
+    client.connect(config.broker, config.port, 60)
 
-# Start the network loop in a separate thread
-client.loop_start()
+    # Start the network loop in a separate thread
+    client.loop_start()
 
-# Collect data for 1 seconds
-time.sleep(1)
+    # Collect data for 1 seconds
+    time.sleep(1)
 
-#Stop the network loop and disconnect
-client.loop_stop()
-client.disconnect()
+    #Stop the network loop and disconnect
+    client.loop_stop()
+    client.disconnect()
 
 #########################################
 ###  Ship Position dataframe     ########

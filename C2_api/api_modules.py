@@ -8,6 +8,7 @@ import paho.mqtt.client as mqtt
 import time
 import os
 from glob import glob
+import io
 def get_positions(token, platform_type, platform_serial):
     api_url = "https://api.c2.noc.ac.uk/positions/positions" 
 
@@ -211,7 +212,7 @@ def email_to_csv_pos(email_path):
     position_df = pd.DataFrame([position_info])
     return(position_df)
 
-def get_observations(token, platform_type, platform_serial):
+def get_observations(token, platform_type, platform_serial, variables):
     api_url = "https://api.c2.noc.ac.uk/timeseries/observations/csv" 
 
 
@@ -223,7 +224,8 @@ def get_observations(token, platform_type, platform_serial):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
-    "from": "2024-05-28T18:57"
+    "from": "2024-05-28T18:57",
+    "variable": variables
     }
 
     # Making my query
@@ -232,8 +234,9 @@ def get_observations(token, platform_type, platform_serial):
     # Check the status code of the response
     if response.status_code == 200:
         # Successful request
-        data = response.json()
-        return(data[0])
+        data = response.content.decode('utf-8')
+        df = pd.read_csv(io.StringIO(data))
+        return(df)
     else:
         # Handle errors
         print(f"Error: {response.status_code}")
@@ -241,5 +244,5 @@ def get_observations(token, platform_type, platform_serial):
 
 if __name__ == '__main__':
 
-   # test = get_observations(config.token, 'slocum', 'unit_397')
-    test_df = pd.DataFrame(test)
+    test = get_observations(config.token, 'slocum', 'unit_397', variables = ["m_water_vy", "m_water_vx", "m_final_water_vx", "m_final_water_vy"])
+    test.to_csv('response.csv')

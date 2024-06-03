@@ -32,7 +32,7 @@ while True:
         glider_data = []
         for _, row in position_df.iterrows():
             date_row = pd.to_datetime(row['time'])
-            if date_row > pd.to_datetime('2024-05-27T00:00:00Z'):
+            if date_row > pd.to_datetime('2024-05-29T00:00:00Z'):
                 glider_data.append({
                     'date': date_row.strftime('%Y-%m-%d %H:%M:%S'),
                     'lon': row['longitude'],

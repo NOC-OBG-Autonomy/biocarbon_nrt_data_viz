@@ -9,6 +9,15 @@ import os
 from glob import glob
 from api_modules import *
 
+##########################################
+####### Waypoints ########################
+##########################################
+waypoints = pd.read_csv('Data/Gliders/waypoints.csv')
+print(waypoints.head())
+waypoints['date'] = pd.to_datetime(waypoints['date'])
+waypoints['lon'] = -convert_series_to_decimal_degrees(waypoints['lon'])
+waypoints['lat'] = convert_series_to_decimal_degrees(waypoints['lat'])
+
 ############################################
 ######### Glider Position ##################
 ############################################
@@ -93,8 +102,9 @@ print(f'Float position updated and formatted')
 ########### Respire dataframe ############
 ##########################################
 
-respire = pd.read_csv('Data/Respire/raw_location_respire.csv')
 input_format = '%b %d %Y %I:%M:%S.%f %p'
+
+respire = pd.read_csv('Data/Respire/raw_location_respire.csv')
 
 respire['Datetime'] = pd.to_datetime(respire['Timestamp'], format=input_format)
 
@@ -115,6 +125,7 @@ respire_sel.loc[:,'platform_type'] = 'respire'
 respire_sel.loc[:,'platform_id'] = 'respire'
 
 print(f'respire position formatted')
+
 ##########################################
 ######## Bind all the positions df #######
 ##########################################
@@ -122,6 +133,7 @@ print(f'respire position formatted')
 combined_position = pd.concat([ship_position, glider_position])
 combined_position = pd.concat([combined_position, floats_position])
 combined_position = pd.concat([combined_position, respire_sel])
+combined_position = pd.concat([combined_position, waypoints])
 
 combined_position.to_csv('Plotting_tools/shared_data/rt_positions.csv')
 

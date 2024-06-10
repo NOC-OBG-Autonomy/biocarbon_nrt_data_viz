@@ -94,6 +94,14 @@ def convert_to_decimal(degrees, minutes):
     """Convert degrees and minutes to decimal degrees."""
     return degrees + (minutes / 60)
 
+def convert_series_to_decimal_degrees(series):
+    def convert_to_decimal_degrees(value):
+        degrees = int(value // 100)
+        minutes = value % 100
+        decimal_degrees = degrees + (minutes / 60)
+        return decimal_degrees
+    
+    return series.apply(convert_to_decimal_degrees)
 
 def extract_lonlat(json_string):
     """Parse GPGGA string to extract and convert latitude and longitude."""

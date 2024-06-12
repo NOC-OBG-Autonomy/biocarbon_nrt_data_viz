@@ -232,7 +232,7 @@ def get_observations(token, platform_type, platform_serial, variables):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
-    "from": "2024-05-28T18:57",
+    "from": "2024-06-04T18:57",
     "variable": variables
     }
 

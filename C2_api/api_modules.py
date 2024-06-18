@@ -8,6 +8,7 @@ import paho.mqtt.client as mqtt
 import time
 import os
 from glob import glob
+import io
 def get_positions(token, platform_type, platform_serial):
     api_url = "https://api.c2.noc.ac.uk/positions/positions" 
 
@@ -93,6 +94,14 @@ def convert_to_decimal(degrees, minutes):
     """Convert degrees and minutes to decimal degrees."""
     return degrees + (minutes / 60)
 
+def convert_series_to_decimal_degrees(series):
+    def convert_to_decimal_degrees(value):
+        degrees = int(value // 100)
+        minutes = value % 100
+        decimal_degrees = degrees + (minutes / 60)
+        return decimal_degrees
+    
+    return series.apply(convert_to_decimal_degrees)
 
 def extract_lonlat(json_string):
     """Parse GPGGA string to extract and convert latitude and longitude."""
@@ -162,7 +171,7 @@ def read_cts_datetime(filepath):
     datetime_str = date_str + ' ' + time_str
     
     # Convert the combined string to a datetime object
-    dt = pd.to_datetime(datetime_str, format='%y-%m-%d %H:%M:%S')
+    dt = pd.to_datetime(datetime_str, format = '%y-%m-%d %H:%M:%S')
     return(dt)
 
 def read_cts_position(filepath):
@@ -211,7 +220,37 @@ def email_to_csv_pos(email_path):
     position_df = pd.DataFrame([position_info])
     return(position_df)
 
+def get_observations(token, platform_type, platform_serial, variables):
+    api_url = "https://api.c2.noc.ac.uk/timeseries/observations/csv" 
+
+
+    # Headers including the token
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    params = {
+    "platform_type": platform_type,
+    "platform_serial": platform_serial,
+    "from": "2024-06-04T18:57",
+    "variable": variables
+    }
+
+    # Making my query
+    response = requests.get(api_url, headers=headers, params = params)
+
+    # Check the status code of the response
+    if response.status_code == 200:
+        # Successful request
+        data = response.content.decode('utf-8')
+        df = pd.read_csv(io.StringIO(data))
+        return(df)
+    else:
+        # Handle errors
+        print(f"Error: {response.status_code}")
+        print(response.text)
+
 if __name__ == '__main__':
 
-    test_df = email_to_csv_pos('Data/Floats/cts5_emails/lovuse026d_01.txt')
-    print(test_df.head())
+    test = get_observations(config.token, 'slocum', ['unit_397', 'unit_405', 'unit_398', 'unit_345'], variables = ["m_water_vy", "m_water_vx", "m_lat", "m_lon", "m_time"])
+    test.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/current.csv')

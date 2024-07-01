@@ -65,7 +65,10 @@ def sending_waypoints(token, filename, plan_id):
         print(f"Error in patching: {response.status_code}")
         print(response.text)
     
-    response = requests.post(post_url, headers = headers, params = post)
+    params = {
+        "payload" : patch
+    }
+    response = requests.post(post_url, headers = headers, params = params)
 
 def update_waypoints(glider, lon, lat, token, message = False):
     """Combine the writting and the sending of new glider waypoints to C2. The user only need to give the glider name and the new lon lat, and a message to the pilote if needed.

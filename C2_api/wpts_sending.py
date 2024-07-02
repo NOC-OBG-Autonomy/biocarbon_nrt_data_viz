@@ -38,8 +38,8 @@ def sending_waypoints(token, filename, plan_id):
         plan_id (int): The plan ID  of the glider mission
     """
 
-    patch_url = 'https://api-test.c2.noc.ac.uk/planner/plans/' + str(plan_id) + '/'
-    post_url = 'https://api-test.c2.noc.ac.uk/logging/log/'
+    patch_url = 'https://api-test.c2.noc.ac.uk/planner/plans/' + str(plan_id)
+    post_url = 'https://api-test.c2.noc.ac.uk/logging/log'
     # Headers including the token
     headers = {
         "Authorization": f"Bearer {token}"
@@ -48,28 +48,41 @@ def sending_waypoints(token, filename, plan_id):
     with open(filename, 'r') as file:
         data = json.load(file)
 
-    patch = data["Bodies"][0]['waypoints update']
-    post = data["Bodies"][0]['Update log']
+    patch = data["Bodies"][0]['waypoints update'][0]
+    post = data["Bodies"][0]['Update log'][0]
+
+    params_patch = {
+        "payload" : patch,
+        "ID" : plan_id
+    }
+
+    params_post = {
+        "payload" : post,
+        "ID" : plan_id
+    }
 
     # Making my query
-    response = requests.patch(patch_url, headers=headers, params = patch)
+    response = requests.patch(patch_url, headers=headers, json=patch)
 
     # Check the status code of the response
     if response.status_code == 200:
         # Successful request
-        data = response.content.decode('utf-8')
-        df = pd.read_csv(io.StringIO(data))
-        return(df)
+        print(response.json())
     else:
         # Handle errors
         print(f"Error in patching: {response.status_code}")
         print(response.text)
     
-    params = {
-        "payload" : patch
-    }
-    response = requests.post(post_url, headers = headers, params = params)
+    print(post)
+    response = requests.post(post_url, headers=headers, json=post)
 
+    if response.status_code == 200:
+        # Successful request
+        print(response.json())
+    else:
+        # Handle errors
+        print(f"Error in logging: {response.status_code}")
+        print(response.text)
 def update_waypoints(glider, lon, lat, token, message = False):
     """Combine the writting and the sending of new glider waypoints to C2. The user only need to give the glider name and the new lon lat, and a message to the pilote if needed.
 
@@ -106,6 +119,7 @@ def update_waypoints(glider, lon, lat, token, message = False):
 if __name__ == '__main__':
 
     glider = 'test'
-    update_waypoints(glider, 24, 55, token = config.token_test, message = True)
+    update_waypoints(glider, 24, 55, token = config.token_test)
+
     
     

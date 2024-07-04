@@ -3,7 +3,8 @@ import os
 import config
 import json
 from datetime import datetime
-
+import geopy.distance
+import numpy as np
 
 def write_waypoints(filename, current_date, lon, lat, commit, message_to_pilote):
     """Modify the JSON standard C2 format to send gliders waypoints
@@ -67,22 +68,70 @@ def sending_waypoints(token, filename, plan_id):
     # Check the status code of the response
     if response.status_code == 200:
         # Successful request
-        print(response.json())
+        print(f"Waypoints updated")
     else:
         # Handle errors
         print(f"Error in patching: {response.status_code}")
         print(response.text)
     
-    print(post)
     response = requests.post(post_url, headers=headers, json=post)
 
     if response.status_code == 200:
         # Successful request
-        print(response.json())
+        print(f"Loggs sent to pilote")
     else:
         # Handle errors
         print(f"Error in logging: {response.status_code}")
         print(response.text)
+
+def get_last_coordinates(data):
+    """
+    Extract the last latitude and longitude from the JSON response.
+
+    Args:
+    data: JSON response in dictionary format.
+
+    Returns:
+    Tuple containing the last latitude and longitude.
+    """
+    # Extract the list of positions
+    positions = data['positions']['internal']
+    
+    # Get the last position
+    last_position = positions[-1]
+    
+    # Extract the latitude and longitude
+    last_latitude = last_position['latitude']
+    last_longitude = last_position['longitude']
+    
+    return last_latitude, last_longitude
+
+def calculate_distance(lon1, lat1, lon2, lat2):
+    coords1 = (lon1, lat1)
+    coords2 = (lon2, lat2)
+    dist = round(geopy.distance.geodesic(coords1, coords2).km, 2)
+    return(dist)
+
+def calculate_bearing(lon1, lat1, lon2, lat2):
+    dx = lon2 - lon1
+    dy = lat2 - lat1
+    angle = np.arctan2(dx, dy)  # angle in radians
+    bearing = np.degrees(angle)  # convert to degrees
+    bearing = round((bearing + 360) % 360,0)  # normalize to 0-360
+    return bearing
+
+def angle_to_direction(angle):
+    directions = [
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+        "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+    ]
+    # Normalize the angle to be within 0 to 360 degrees
+    angle = angle % 360
+    
+    # Calculate the corresponding index for the directions list
+    index = round(angle / 22.5) % 16
+    return directions[index]
+
 def update_waypoints(glider, lon, lat, token, message = False):
     """Combine the writting and the sending of new glider waypoints to C2. The user only need to give the glider name and the new lon lat, and a message to the pilote if needed.
 
@@ -101,25 +150,42 @@ def update_waypoints(glider, lon, lat, token, message = False):
 
     IDS = {
         'test' : 799
-    }
+    } 
 
     filename = files[glider]
     ID = IDS[glider]
 
-    if message == True:
-        message_to_pilote = input("Type your message to the glider pilote : ")
+    json_position = get_positions(token, platform_type = "slocum", platform_serial = "unit_398", test = True)
+    current_lon, current_lat =  get_last_coordinates(json_position)
 
+    dist = calculate_distance(current_lon, current_lat, lon, lat)
+    bearing = calculate_bearing(current_lon, current_lat, lon, lat)
+
+    direction = angle_to_direction(bearing)
+
+    print(f"The glider will be sent to {dist}km away from its current location in a {direction} direction ({bearing} angle).")
+    validation = input("Do you want to proceed ? (y/n) ")
+
+    if validation == "n":
+        print(f"abortion of waypoint sending.")
+        quit()
+    if validation == "y":
+
+        if message == True:
+            message_to_pilote = input("Type your message to the glider pilote : ")
+
+        else :
+            message_to_pilote = f"Waypoints generated in ID {ID} on {current_date} new waypoints ({lon},{lat}), {dist}km away."
+
+        write_waypoints(filename, current_date, lon, lat, commit, message_to_pilote)
+
+        sending_waypoints(token, filename, ID)
     else :
-        message_to_pilote = f"Waypoints generated in ID {ID} and version <plan_version> new waypoints ({lon},{lat})"
-
-    write_waypoints(filename, current_date, lon, lat, commit, message_to_pilote)
-
-    sending_waypoints(token, filename, ID)
-
+        "answer not recognised"
 if __name__ == '__main__':
 
     glider = 'test'
-    update_waypoints(glider, 24, 55, token = config.token_test)
+    update_waypoints(glider, 0, 0, token = config.token_test)
 
     
     

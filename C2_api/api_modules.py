@@ -9,9 +9,12 @@ import time
 import os
 from glob import glob
 import io
-def get_positions(token, platform_type, platform_serial):
-    api_url = "https://api.c2.noc.ac.uk/positions/positions" 
-
+def get_positions(token, platform_type, platform_serial, test = False):
+    
+    if test == False:
+        api_url = "https://api.c2.noc.ac.uk/positions/positions" 
+    if test == True :
+        api_url = "https://api-test.c2.noc.ac.uk/positions/positions" 
 
     # Headers including the token
     headers = {

@@ -9,6 +9,9 @@ import time
 import os
 from glob import glob
 import io
+import simplekml
+
+
 def get_positions(token, platform_type, platform_serial, test = False):
     
     if test == False:
@@ -45,6 +48,26 @@ def convert_positions(json_pos):
     my_pos = data['positions'].iloc[0]
     data_cleaned = pd.DataFrame(my_pos)
     return(data_cleaned)
+
+def create_kml(json_position, output_file):
+    kml = simplekml.Kml()
+
+    positions = json_position['positions']['internal']
+
+    positions_list = []
+    for coord in positions:
+        lon = coord['longitude']
+        lat = coord['latitude']
+
+        positions_list.append((lon, lat))
+    
+    point = kml.newlinestring(name = "my test", coords = positions_list)
+
+    #time = coord['time'].replace('T', ' ').replace('Z', '')
+    #point.timestamp.when = time
+
+    kml.save(output_file)
+
 
 def mqtt_connect(client, userdata, flags, rc, properties):
     if rc == 0:

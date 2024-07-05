@@ -184,8 +184,9 @@ def update_waypoints(glider, lon, lat, token, message = False):
         "answer not recognised"
 if __name__ == '__main__':
 
-    glider = 'test'
-    update_waypoints(glider, 0, 0, token = config.token_test)
-
+    #glider = 'test'
+    #update_waypoints(glider, 0, 0, token = config.token_test)
+    data = get_positions(config.token, 'slocum', 'unit_398')
+    create_kml(data, 'test.kml')
     
     

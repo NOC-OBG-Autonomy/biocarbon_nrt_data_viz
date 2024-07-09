@@ -26,7 +26,8 @@ def get_positions(token, platform_type, platform_serial, test = False):
 
     params = {
     "platform_type": platform_type,
-    "platform_serial": platform_serial
+    "platform_serial": platform_serial,
+    "from": "2024-05-28T18:57"
     }
 
     # Making my query

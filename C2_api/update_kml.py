@@ -73,6 +73,13 @@ currents_y = currents_y.sort_values('datetime')
 merged_df = pd.merge_asof(currents_x, currents_y, on='datetime', direction='nearest')
 merged_df = pd.merge_asof(merged_df, currents_position, on='datetime', direction='nearest')
 
-merged_sample = merged_df.tail(12)
+# Get the current time in UTC
+now = pd.Timestamp.now(tz='UTC')
 
-merged_sample.to_csv('gliders_dac.csv')
+# Calculate the time 24 hours ago
+last_day = now - datetime.timedelta(hours=24)
+
+filtered_dac =  merged_df[merged_df['datetime'] >= last_day]
+filtered_dac = filtered_dac.drop_duplicates(subset=['m_lon', 'm_lat'])
+
+filtered_dac.to_csv('gliders_dac.csv')

@@ -71,7 +71,7 @@ def get_last_coordinates(data):
     
     return last_latitude, last_longitude
 
-def create_kml_line(json_position, output_file):
+def create_kml_line(json_position, output_file, color):
     kml = simplekml.Kml()
 
     positions = json_position['positions']['internal']
@@ -83,7 +83,11 @@ def create_kml_line(json_position, output_file):
 
         positions_list.append((lon, lat))
     
-    point = kml.newlinestring(name = "my test", coords = positions_list)
+    ls = kml.newlinestring(name = "my test", coords = positions_list)
+
+    ls.style.linestyle.width = 3
+
+    ls.style.linestyle.color = color
 
     #time = coord['time'].replace('T', ' ').replace('Z', '')
     #point.timestamp.when = time

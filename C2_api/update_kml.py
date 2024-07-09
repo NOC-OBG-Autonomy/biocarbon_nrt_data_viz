@@ -8,24 +8,24 @@ v_list = []
 gliders = ['unit_345', 'unit_397', 'unit_398', 'unit_405']
 #Unit 345
 data = get_positions(config.token, 'slocum', 'unit_345')
-create_kml_line(data, 'unit_345_traj.kml')
+create_kml_line(data, 'unit_345_traj.kml', simplekml.Color.purple)
 print(f'')
 
 
 #Unit 397
 
 data = get_positions(config.token, 'slocum', 'unit_397')
-create_kml_line(data, 'unit_397_traj.kml')
+create_kml_line(data, 'unit_397_traj.kml', simplekml.Color.orange)
 
 #Unit 398
 data = get_positions(config.token, 'slocum', 'unit_398')
-create_kml_line(data, 'unit_398_traj.kml')
+create_kml_line(data, 'unit_398_traj.kml', simplekml.Color.green)
 
 
 #unit 405
 
 data = get_positions(config.token, 'slocum', 'unit_405')
-create_kml_line(data, 'unit_405_traj.kml')
+create_kml_line(data, 'unit_405_traj.kml', simplekml.Color.blue)
 
 
 currents = get_observations(config.token, 'slocum', gliders, variables = ["m_water_vy", "m_water_vx", "m_lat", "m_lon", "m_time"])

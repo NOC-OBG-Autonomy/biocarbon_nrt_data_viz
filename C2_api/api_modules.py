@@ -310,8 +310,9 @@ def get_observations(token, platform_type, platform_serial, variables):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
-    "from": "2024-06-04T18:57",
-    "variable": variables
+    "from": "2024-07-04T18:57",
+    "variable": variables,
+    "bucket_size" : "1 hour"
     }
 
     # Making my query

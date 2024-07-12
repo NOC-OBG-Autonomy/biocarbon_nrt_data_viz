@@ -39,8 +39,8 @@ def sending_waypoints(token, filename, plan_id):
         plan_id (int): The plan ID  of the glider mission
     """
 
-    patch_url = 'https://api-test.c2.noc.ac.uk/planner/plans/' + str(plan_id)
-    post_url = 'https://api-test.c2.noc.ac.uk/logging/log'
+    patch_url = 'https://api.c2.noc.ac.uk/planner/plans/' + str(plan_id)
+    post_url = 'https://api.c2.noc.ac.uk/logging/log'
     # Headers including the token
     headers = {
         "Authorization": f"Bearer {token}"
@@ -84,27 +84,6 @@ def sending_waypoints(token, filename, plan_id):
         print(f"Error in logging: {response.status_code}")
         print(response.text)
 
-def get_last_coordinates(data):
-    """
-    Extract the last latitude and longitude from the JSON response.
-
-    Args:
-    data: JSON response in dictionary format.
-
-    Returns:
-    Tuple containing the last latitude and longitude.
-    """
-    # Extract the list of positions
-    positions = data['positions']['internal']
-    
-    # Get the last position
-    last_position = positions[-1]
-    
-    # Extract the latitude and longitude
-    last_latitude = last_position['latitude']
-    last_longitude = last_position['longitude']
-    
-    return last_latitude, last_longitude
 
 def calculate_distance(lon1, lat1, lon2, lat2):
     coords1 = (lon1, lat1)
@@ -146,17 +125,26 @@ def update_waypoints(glider, lon, lat, token, message = False):
 
     files = {
         'test' : 'C2_api/json_files/test.json',
-        'doombar' : 'C2_api/json_files/doombar_wpts.json'}
+        'unit_345' : 'C2_api/json_files/cabot_wpts.json',
+        'unit_397' : 'C2_api/json_files/nelson_wpts.json',
+        'unit_398' : 'C2_api/json_files/churchill_wpts.json',
+        'unit_405' : 'C2_api/json_files/doombar_wpts.json'}
 
     IDS = {
-        'test' : 799
+        'test' : 799,
+        'unit_345' : 2502,
+        'unit_397' : 2503,
+        'unit_398' : 2504,
+        'unit_405' : 2505
     } 
 
     filename = files[glider]
     ID = IDS[glider]
 
-    json_position = get_positions(token, platform_type = "slocum", platform_serial = "unit_398", test = True)
-    current_lon, current_lat =  get_last_coordinates(json_position)
+    json_position = get_positions(token, platform_type = "slocum", platform_serial = glider, test = False)
+    current_lat, current_lon =  get_last_coordinates(json_position)
+
+    print(f'current position : {current_lon}, {current_lat}')
 
     dist = calculate_distance(current_lon, current_lat, lon, lat)
     bearing = calculate_bearing(current_lon, current_lat, lon, lat)
@@ -184,9 +172,7 @@ def update_waypoints(glider, lon, lat, token, message = False):
         "answer not recognised"
 if __name__ == '__main__':
 
-    #glider = 'test'
-    #update_waypoints(glider, 0, 0, token = config.token_test)
-    data = get_positions(config.token, 'slocum', 'unit_398')
-    create_kml(data, 'test.kml')
-    
-    
+    glider = 'unit_345'
+    lon = -18.6534833
+    lat = 60.55575
+    update_waypoints(glider, lon, lat, token = config.token)

@@ -27,7 +27,8 @@ def get_positions(token, platform_type, platform_serial, test = False):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
-    "from": "2024-05-28T18:57"
+    "from": "2024-05-28T18:57",
+    "time_order" : "descending"
     }
 
     # Making my query
@@ -64,7 +65,7 @@ def get_last_coordinates(data):
     positions = data['positions']['internal']
     
     # Get the last position
-    last_position = positions[-1]
+    last_position = positions[0]
     
     # Extract the latitude and longitude
     last_latitude = last_position['latitude']
@@ -311,8 +312,7 @@ def get_observations(token, platform_type, platform_serial, variables):
     "platform_type": platform_type,
     "platform_serial": platform_serial,
     "from": "2024-07-04T18:57",
-    "variable": variables,
-    "bucket_size" : "1 hour"
+    "variable": variables
     }
 
     # Making my query

@@ -67,7 +67,7 @@ for i in gliders:
 
 create_kml_point(gliders, lon_list, lat_list, u_list, v_list, 'last_pos.kml')
 
-print(f"All done !")
+print(f"Making a csv...")
 
 #write a csv
 
@@ -102,7 +102,7 @@ filtered_dac = filtered_dac.drop_duplicates(subset=['m_lon', 'm_lat']).drop_dupl
 current_data = filtered_dac.copy()
 #filtered_dac.to_csv('gliders_dac.csv')
 
-
+print(f"Making a quiver plot...")
 #extract the lon and lat from the dataset only once
 x = current_data['m_lon']
 y = current_data['m_lat']
@@ -111,25 +111,24 @@ y = current_data['m_lat']
 #From the U and V vector compute the speed, we use it as our colour map
 u = current_data['m_water_vx']
 v = current_data['m_water_vy']
-speed = np.sqrt(u**2 + v**2)
+speed = np.sqrt(pd.Series(u_list)**2 + pd.Series(v_list)**2)
 
 #Set up the plot layout, extent and title
-fig = plt.figure(figsize=(15, 15))
-ax = fig.add_subplot(1, 1, 1, projection=ccrs.Mercator())
 
-fig, ax = gearth_fig(llcrnrlon=x.min(),
-                     llcrnrlat=y.min(),
-                     urcrnrlon=x.max(),
-                     urcrnrlat=y.max())
+
+fig, ax = gearth_fig(llcrnrlon=x.min()-0.2,
+                     llcrnrlat=y.min()-0.1,
+                     urcrnrlon=x.max()+0.2,
+                     urcrnrlat=y.max()+0.1)
 #ax.set_extent([min_lon, max_lon, min_lat, max_lat], crs=ccrs.PlateCarree())
 
 #Plot the current vectors field and the coastline
-im = ax.quiver(x, y, u, v, speed, angles='xy', scale_units='xy', cmap='viridis', transform=ccrs.PlateCarree())
+im = ax.quiver(lon_list, lat_list, u_list, v_list, speed, angles='xy', scale_units='xy', cmap='jet', scale = 30)
 
-im.set_axis_off()
+ax.set_axis_off()
 #format the color bar
-cbar = plt.colorbar(im, ax = ax, label=r'Depth averaged current (m s$^{-1}$)')
-cbar.set_label(r'Depth averaged current (m s$^{-1}$)', rotation=270, labelpad=15)
+#cbar = plt.colorbar(im, ax = ax, label=r'Depth averaged current (m s$^{-1}$)')
+#cbar.set_label(r'Depth averaged current (m s$^{-1}$)', rotation=270, labelpad=15)
 
 #save the plot and then close it to avoid high memory usage
 plt.savefig('gliders_dac.png', transparent = True)
@@ -142,7 +141,7 @@ cb = fig.colorbar(im, cax=ax)
 cb.set_label(label=r'Depth averaged current (m s$^{-1}$)', rotation=-90, color='k', labelpad=20)
 fig.savefig('legend.png', transparent=True, format='png') 
 
-make_kml(llcrnrlon=x.min(), llcrnrlat=y.min(),
-         urcrnrlon=x.max(), urcrnrlat=y.max(),
+make_kml(llcrnrlon=x.min()-0.2, llcrnrlat=y.min()-0.1,
+         urcrnrlon=x.max()+0.2, urcrnrlat=y.max()+0.1,
          figs=['gliders_dac.png'], colorbar='legend.png',
          kmzfile='dac_uv.kmz', name='Depth averaged current')

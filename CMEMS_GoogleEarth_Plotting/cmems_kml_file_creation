@@ -1,0 +1,287 @@
+from simplekml import (Kml, OverlayXY, ScreenXY, Units, RotationXY,
+                       AltitudeMode, Camera)
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+import xarray as xr
+from datetime import datetime
+import matplotlib.colors as colors
+import json
+
+# Define the make_kml function
+def make_kml(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat,
+             figs, colorbar=None, **kw):
+    kml = Kml()
+    altitude = kw.pop('altitude', 2e7)
+    roll = kw.pop('roll', 0)
+    tilt = kw.pop('tilt', 0)
+    altitudemode = kw.pop('altitudemode', AltitudeMode.relativetoground)
+    camera = Camera(latitude=np.mean([urcrnrlat, llcrnrlat]),
+                    longitude=np.mean([urcrnrlon, llcrnrlon]),
+                    altitude=altitude, roll=roll, tilt=tilt,
+                    altitudemode=altitudemode)
+
+    kml.document.camera = camera
+    draworder = 0
+    for fig in figs:
+        draworder += 1
+        ground = kml.newgroundoverlay(name='GroundOverlay')
+        ground.draworder = draworder
+        ground.visibility = kw.pop('visibility', 1)
+        ground.name = kw.pop('name', 'overlay')
+        ground.color = kw.pop('color', '9effffff')
+        ground.atomauthor = kw.pop('author', 'ocefpaf')
+        ground.latlonbox.rotation = kw.pop('rotation', 0)
+        ground.description = kw.pop('description', 'Matplotlib figure')
+        ground.gxaltitudemode = kw.pop('gxaltitudemode', 'clampToSeaFloor')
+        ground.icon.href = fig
+        ground.latlonbox.east = llcrnrlon
+        ground.latlonbox.south = llcrnrlat
+        ground.latlonbox.north = urcrnrlat
+        ground.latlonbox.west = urcrnrlon
+
+    if colorbar:
+        screen = kml.newscreenoverlay(name='ScreenOverlay')
+        screen.icon.href = colorbar
+        screen.overlayxy = OverlayXY(x=0, y=0,
+                                     xunits=Units.fraction,
+                                     yunits=Units.fraction)
+        screen.screenxy = ScreenXY(x=0.015, y=0.075,
+                                   xunits=Units.fraction,
+                                   yunits=Units.fraction)
+        screen.rotationXY = RotationXY(x=0.5, y=0.5,
+                                       xunits=Units.fraction,
+                                       yunits=Units.fraction)
+        screen.size.x = 0
+        screen.size.y = 0
+        screen.size.xunits = Units.fraction
+        screen.size.yunits = Units.fraction
+        screen.visibility = 1
+
+    kmzfile = kw.pop('kmzfile', 'overlay.kmz')
+    kml.savekmz(kmzfile)
+
+# Define the gearth_fig function
+def gearth_fig(llcrnrlon, llcrnrlat, urcrnrlon, urcrnrlat, pixels=1024):
+    aspect = np.cos(np.mean([llcrnrlat, urcrnrlat]) * np.pi/180.0)
+    xsize = np.ptp([urcrnrlon, llcrnrlon]) * aspect
+    ysize = np.ptp([urcrnrlat, llcrnrlat])
+    aspect = ysize / xsize
+
+    if aspect > 1.0:
+        figsize = (10.0 / aspect, 10.0)
+    else:
+        figsize = (10.0, 10.0 * aspect)
+
+    fig = plt.figure(figsize=figsize, frameon=False, dpi=pixels//10)
+    ax = fig.add_axes([0, 0, 1, 1])
+    ax.set_xlim(llcrnrlon, urcrnrlon)
+    ax.set_ylim(llcrnrlat, urcrnrlat)
+    return fig, ax
+
+# Establish directory locations
+parent_dir    = os.path.abspath(os.path.join(os.getcwd()))
+data_dir      = os.path.join(parent_dir, 'data')
+satellite_dir = os.path.join(data_dir, 'satellite')
+output_dir    = os.path.join(parent_dir, 'Output/sat_plot')
+NEODASS_dir   = os.path.join(satellite_dir, 'NEODASS')
+floats_dir    = os.path.join(parent_dir, 'data/Floats')
+kmz_dir       = os.path.join(parent_dir, 'data/kmz')
+
+# Define plotting preferences
+float_colors = {
+    '4903532': '#B4184C',
+    'navis102': '#F5A300',
+    '1902637': '#0000E0',
+    'navis101': '#FBFF1F'
+}
+
+object_symbols = {
+    'glider': 'o',
+    'Float': 's',
+    'Ship': '^'
+}
+
+DAC_plot_lim_max = 0.5
+DAC_plot_lim_min = 0
+DAC_plot_as_log = False
+xx_day_offset = [-1]
+
+# Load the filename from the JSON file
+json_file = os.path.join(parent_dir, 'downloaded_files.json')
+with open(json_file, 'r') as f:
+    data = json.load(f)
+
+# Check if the JSON data is a list or a dictionary
+if isinstance(data, list):
+    filenames = data
+    if 'processed data' not in data:
+        data = {'filenames': filenames, 'processed data': []}
+    else:
+        data = {'filenames': filenames, 'processed data': data['processed data']}
+elif isinstance(data, dict):
+    filenames = data.get('filenames', [])
+    processed_files = data.get('processed data', [])
+else:
+    raise ValueError("JSON file format is not recognized. Expected a list or a dictionary.")
+
+# Filter for the specific files
+matching_files = [file for file in filenames if file.endswith('.nc')]
+processed_matching_files = [file for file in processed_files if file.endswith('.nc')]
+
+# Combine both non-processed and processed files
+all_matching_files = matching_files + processed_matching_files
+
+# Initialize var_dict with categories as keys and empty dictionaries as values
+var_dict = {'SC': {}, 'DAC': {}, 'DWC': {}}
+
+# Populate var_dict with files and variables
+for file in all_matching_files:
+    filepath = os.path.join(satellite_dir, file)
+    ds = xr.open_dataset(filepath)
+    variables = list(ds.data_vars.keys())
+
+    key_variables = [var for var in variables if 'longitude' not in var.lower() and 'latitude' not in var.lower()]
+
+    for key_variable in key_variables:
+        var_name_lower = key_variable.lower()
+        if 'adt' in var_name_lower:
+            var_dict['SC'][file] = key_variable
+        elif 'uo' in var_name_lower and 'averaged' in file:
+            var_dict['DAC'][file] = key_variable
+        elif 'uo' in var_name_lower and '1000m' in file:
+            var_dict['DWC'][file] = key_variable
+
+    ds.close()
+
+# Load autonomy positions
+csv_file = os.path.join(parent_dir, 'Plotting_tools', 'shared_data', 'rt_positions.csv')
+df = pd.read_csv(csv_file)
+df['date'] = pd.to_datetime(df['date'])  # Convert the 'time' column to datetime
+
+# Plotting most recent data from CMEMS
+for var_category, files in var_dict.items():
+    if var_category in ['SC', 'DAC', 'DWC']:
+        for day_offset in xx_day_offset:
+            if len(files) > 1:
+                data_vars = []
+                for file, data_var in files.items():
+                    cur_data_var = xr.open_dataset(os.path.join(satellite_dir, file))
+                    data_vars.append(cur_data_var[data_var].isel(time=day_offset))
+                aligned_data_vars = xr.align(*data_vars, join='outer')
+                combined_data_var = aligned_data_vars[0]
+                for var in aligned_data_vars[1:]:
+                    combined_data_var = combined_data_var.combine_first(var)
+                combined_data_var_mean = np.nanmean(combined_data_var, axis=0)
+                date_of_plot = str(combined_data_var['time'].data[0])[0:10]
+            elif len(files) == 1:
+                file, data_var = next(iter(files.items()))
+                cur_data_var = xr.open_dataset(os.path.join(satellite_dir, file))
+                date_of_plot = str(cur_data_var['time'].data[day_offset])[0:10]
+                combined_data_var_mean = cur_data_var[data_var].isel(time=day_offset).data
+            else:
+                continue
+
+            norm = colors.LogNorm(vmin=DAC_plot_lim_min, vmax=DAC_plot_lim_max) if DAC_plot_as_log else colors.Normalize(vmin=DAC_plot_lim_min, vmax=DAC_plot_lim_max)
+            xx_plot_units = cur_data_var[data_var].attrs.get('units')
+            xx_plot_cbar_label = 'Sea surface velocity (' + xx_plot_units + ')'
+            data_to_plot_1day = combined_data_var_mean
+            if data_to_plot_1day.shape[0] == 1:
+                data_to_plot_1day = data_to_plot_1day[0]
+
+            longitudes = cur_data_var['longitude'].data
+            latitudes = cur_data_var['latitude'].data
+
+            # Clip the data within the specified range
+            data_to_plot_1day = combined_data_var_mean
+
+            # If the first dimension of the data is 1, remove it
+            if data_to_plot_1day.shape[0] == 1:
+                data_to_plot_1day = data_to_plot_1day[0]
+
+            # Extract longitudes and latitudes
+            longitudes = cur_data_var['longitude'].data
+            latitudes = cur_data_var['latitude'].data
+
+            if var_category in ['DAC','DWC']:
+                ugos = cur_data_var['uo'].isel(time=day_offset).data
+                vgos = cur_data_var['vo'].isel(time=day_offset).data
+            if var_category == 'SC':
+                ugos = cur_data_var['ugos'].isel(time=day_offset).data
+                vgos = cur_data_var['vgos'].isel(time=day_offset).data
+
+            # Extracting latest lead float position
+            date_of_plot_filter = datetime.strptime(date_of_plot, '%Y-%m-%d')
+            df_filtered = df[df['date'] <= date_of_plot_filter]
+
+            legend_handles = []
+
+            # Process each unique object type
+            for obj_type, symbol in object_symbols.items():
+                if obj_type == 'Float':
+                    type_data = df_filtered[df_filtered['platform_type'] == obj_type]
+                    unique_names = type_data['platform_id'].unique()
+                    obj_data = type_data.sort_values(by='date', ascending=False)
+
+            # Define the bounds of the 2-degree square around the center
+            lon_min = obj_data['lon'].iloc[0] - 3
+            lon_max = obj_data['lon'].iloc[0] + 3
+            lat_min = obj_data['lat'].iloc[0] - 2
+            lat_max = obj_data['lat'].iloc[0] + 2
+
+            # Find the indices of the longitudes and latitudes within the bounds
+            lon_indices = np.where((longitudes >= lon_min) & (longitudes <= lon_max))[0]
+            lat_indices = np.where((latitudes >= lat_min) & (latitudes <= lat_max))[0]
+
+            # Extract the subset of data within the bounds
+            subsampled_longitudes = longitudes[lon_indices]
+            subsampled_latitudes = latitudes[lat_indices]
+            subsampled_ugos = ugos[np.ix_(lat_indices, lon_indices)]
+            subsampled_vgos = vgos[np.ix_(lat_indices, lon_indices)]
+
+            # Extract the lon and lat from the dataset only once
+            x = subsampled_longitudes
+            y = subsampled_latitudes
+
+            # From the U and V vector compute the speed, we use it as our colour map
+            u = subsampled_ugos
+            v = subsampled_vgos
+
+            #time_step = 6 * 3600  # Convert 6 hours to seconds
+
+            #U_km_per_6hr = u * time_step / 1000  # Convert from m/s to km/6hr
+            #V_km_per_6hr = v * time_step / 1000  # Convert from m/s to km/6hr
+            speed = np.sqrt(u**2 + v**2)
+
+            # Plot the current vectors field and the coastline
+            png_filename = 'quiver_plot.png'
+            pixels = 1024 * 10
+            fig, ax = gearth_fig(llcrnrlon=lon_min,
+                                 llcrnrlat=lat_min,
+                                 urcrnrlon=lon_max,
+                                 urcrnrlat=lat_max,
+                                 pixels=pixels)
+            im = ax.quiver(x, y, u, v,
+                           speed, angles='xy', scale_units='xy', 
+                           cmap='spring', width=0.002, scale = 2,
+                           norm=norm) #scale = 0.00025)
+            ax.quiverkey(im, 0.86, 0.45, 0.2, "0.2 m s^{-1}$", labelpos='W')
+            ax.set_axis_off()
+            image_name = f"{var_category}_mean.png"
+            image_path = os.path.join(kmz_dir, image_name)
+            fig.savefig(image_path, transparent=False, format='png')
+            plt.clf()
+            plt.close()
+            fig = plt.figure(figsize=(1.0, 4.0), facecolor=None, frameon=False)
+            ax = fig.add_axes([0.0, 0.05, 0.2, 0.9])
+            cb = fig.colorbar(im, cax=ax)
+            cb.set_label('Current velocity [m s^-1]', rotation=-90, color='k', labelpad=20)
+            colorbar_path = os.path.join(kmz_dir, 'colorbar.png')
+            fig.savefig(colorbar_path, transparent=False, format='png')  # Change transparent to True if your colorbar is not on space :)
+            plt.clf()
+            plt.close()
+            kmz_name = f"{var_category}_{date_of_plot}_mean.kmz"
+            kmz_path = os.path.join(kmz_dir, kmz_name)
+            make_kml(lon_min, lat_min, lon_max, lat_max, [image_path], colorbar=colorbar_path, kmzfile=kmz_path)
+            print(f"KMZ file created: {kmz_path}")

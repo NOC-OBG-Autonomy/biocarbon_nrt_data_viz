@@ -1,10 +1,14 @@
 % import_navis_data.m
 
 clear
-home_folder = 'C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/'
 
-fname = 'navis_101';
+home_folder = 'C:\Users\hanshil\Documents\GitHub\biocarbon_nrt_data_viz\';
 
+fnames = {'navis_101','navis_102'};
+
+for xx_fname = 1:length(fnames)
+
+fname = fnames{xx_fname};
 in_folder = [home_folder 'Data/navis/' fname '/raw/'];
 csv_folder = [home_folder 'Data/navis/' fname '/csv_files/'];
 cd(in_folder)
@@ -140,4 +144,4 @@ for fix = 1:length(files)
     disp([fname ' saved ! (thanks Nathan and Hans for that awesome piece of work.)'])
     end
 end
-
+end

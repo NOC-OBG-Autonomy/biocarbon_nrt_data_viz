@@ -1,0 +1,128 @@
+import os
+import copernicusmarine as cpm
+from pathlib import Path
+import ast
+from datetime import datetime, timedelta
+import json
+
+### Functions ###
+
+def create_missing_directories():
+    # Define the path to the parent directory
+    parent_dir = os.path.abspath(os.path.join(os.getcwd()))
+
+    # Check if 'data' folder exists in the parent directory
+    data_dir = os.path.join(parent_dir, 'data')
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+        print("'data' folder created in the parent directory.")
+    else:
+        print("'data' folder already exists in the parent directory.")
+
+    # Check if 'satellite' directory exists inside 'data' folder
+    satellite_dir = os.path.join(data_dir, 'satellite')
+    if not os.path.exists(satellite_dir):
+        os.makedirs(satellite_dir)
+        print("'satellite' directory created inside 'data' folder.")
+    else:
+        print("'satellite' directory already exists inside 'data' folder.")
+
+def save_filenames_to_json(filenames, json_file):
+    if os.path.exists(json_file):
+        with open(json_file, 'r') as f:
+            existing_data = json.load(f)
+    else:
+        existing_data = []
+
+    existing_data.extend(filenames)
+
+    with open(json_file, 'w') as f:
+        json.dump(existing_data, f, indent=4)
+    print(f"Filenames saved to {json_file}")
+
+    with open(json_file, 'w') as f:
+        json.dump(existing_data, f, indent=4)
+
+### ### ###
+
+if __name__ == "__main__":
+    create_missing_directories()
+
+### Variable creation ###
+
+# Directory setup
+parent_dir    = os.path.abspath(os.path.join(os.getcwd()))
+data_dir      = os.path.join(parent_dir, 'data')
+satellite_dir = os.path.join(data_dir, 'satellite')
+
+# Date and time setup
+# Format time as YYYY-MM-DD"T"HH:MM:SS for Copernicus Marine Module
+current_day = datetime.now()
+end_timelabel = current_day.strftime("%Y%m%d")
+end_time    = current_day.strftime("%Y-%m-%dT%H:%M:%S")
+start_time  = current_day - timedelta(days=7)
+start_timelabel = start_time.strftime("%Y%m%d")
+start_time  = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+
+# Geographical bounds
+min_lon   = -35
+max_lon   = -5
+min_lat   = 55
+max_lat   = 66
+min_depth = 0
+max_depth = 1000
+
+# List of datasets to extract
+datasets_to_extract = [
+    'cmems_obs-sl_eur_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D', # currents   (higher res, low(ish) scope)
+    'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m']                 # currents   (modelled product)
+
+# JSON file to store the filenames
+json_file = os.path.join(parent_dir, 'downloaded_files.json')
+
+### ### ###
+
+### Download section ###
+
+filenames = []
+
+# Loop through each dataset
+for dataset_to_extract in datasets_to_extract:
+    # Dynamically set the output filename based on the dataset name
+    if "_mod_" in dataset_to_extract:
+        saved_netCDF_as = f"{start_timelabel}_{end_timelabel}_model_currents.nc"
+        filepath = os.path.join(satellite_dir, saved_netCDF_as)
+    if "_obs-" in dataset_to_extract:
+        saved_netCDF_as = f"{start_timelabel}_{end_timelabel}_observed_currents.nc"
+        filepath = os.path.join(satellite_dir, saved_netCDF_as)
+    # Check if the file already exists
+    if os.path.exists(filepath):
+        response = input(f"Do you want to remove and overwrite the file \"{saved_netCDF_as}\" (y/n): ").strip().lower()
+        if response == 'y':
+            os.remove(filepath)
+            print(f"{filepath} has been removed.")
+            print(f"{saved_netCDF_as}. Proceeding to download.")
+        else:
+            print("Download cancelled.")
+            continue
+    else:
+        print(f"{saved_netCDF_as} does not exist. Proceeding to download.")
+    
+    # Perform the data subset operation
+    cpm.subset(
+        dataset_id=dataset_to_extract,
+        minimum_longitude=min_lon,
+        maximum_longitude=max_lon,
+        minimum_latitude=min_lat,
+        maximum_latitude=max_lat,
+        start_datetime=start_time,
+        end_datetime=end_time,
+        minimum_depth=min_depth,
+        maximum_depth=max_depth,
+        output_filename=saved_netCDF_as,
+        output_directory=satellite_dir
+    )
+
+    filenames.append(saved_netCDF_as)
+    
+save_filenames_to_json(filenames, json_file)

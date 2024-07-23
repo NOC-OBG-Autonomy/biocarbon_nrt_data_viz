@@ -1,0 +1,133 @@
+import os
+import xarray as xr
+import numpy as np
+from datetime import datetime, timedelta
+import json
+
+### Functions ###
+
+# Daily depth-weighted averages
+def weighted_avg(da, weights):
+    weighted_sum = (da * weights).sum(dim='depth')
+    total_weights = weights.sum(dim='depth')
+    return weighted_sum / total_weights
+
+### ### ###
+
+### Setup directories ###
+parent_dir    = os.path.abspath(os.path.join(os.getcwd()))
+data_dir      = os.path.join(parent_dir, 'data')
+satellite_dir = os.path.join(data_dir, 'satellite')
+output_dir    = os.path.join(parent_dir, 'Output/sat_plot')
+NEODASS_dir   = os.path.join(satellite_dir, 'NEODASS')
+floats_dir    = os.path.join(parent_dir, 'Data/Floats')
+
+# JSON file with the filenames
+json_file = os.path.join(parent_dir, 'downloaded_files.json')
+
+# Load the filename from the JSON file
+with open(json_file, 'r') as f:
+    data = json.load(f)
+
+# Check if the JSON data is a list or a dictionary
+if isinstance(data, list):
+    filenames = data
+    if 'processed data' not in data:
+        data = {'filenames': filenames, 'processed data': []}
+    else:
+        data = {'filenames': filenames, 'processed data': data['processed data']}
+elif isinstance(data, dict):
+    filenames = data.get('filenames', [])
+    if 'processed data' not in data:
+        data['processed data'] = []
+else:
+    raise ValueError("JSON file format is not recognized. Expected a list or a dictionary.")
+
+# Filter for the specific file
+filename_in_json = None
+for file in filenames:
+    if "model_currents.nc" in file:
+        filename_in_json = file
+        break
+
+if filename_in_json is None:
+    raise FileNotFoundError("The required model_currents.nc file is not found in the JSON cache.")
+
+filepath = os.path.join(satellite_dir, filename_in_json)
+filename_in_json = filename_in_json.split('.')[0]
+
+# Load the netCDF file
+ds = xr.open_dataset(filepath)
+
+# Extract the relevant data
+depth = ds['depth']
+uo = ds['uo']
+vo = ds['vo']
+
+# Determine the index of the end depth bin (1000m)
+end_depth_value = 1000  # Assuming 1000m is the end depth bin you are interested in
+end_depth_index = (depth == end_depth_value).argmax().item()
+
+# Extract uo and vo at the end depth bin
+uo_1000m = uo.isel(depth=end_depth_index)
+vo_1000m = vo.isel(depth=end_depth_index)
+
+# Create a new dataset with the extracted data
+ds_1000m = xr.Dataset({
+    'uo': uo_1000m,
+    'vo': vo_1000m
+})
+
+# Add attributes
+ds_1000m['uo'].attrs = uo.attrs
+ds_1000m['vo'].attrs = vo.attrs
+ds_1000m.attrs = ds.attrs
+
+# Calculate depth intervals
+depth_diff = np.diff(depth, append=depth[-1])
+
+# Convert depth_diff to DataArray
+depth_diff_da = xr.DataArray(depth_diff, coords={'depth': depth}, dims='depth')
+
+# Apply the weighted average function for each day
+weighted_uo = uo.groupby('time').map(weighted_avg, args=(depth_diff_da,))
+weighted_vo = vo.groupby('time').map(weighted_avg, args=(depth_diff_da,))
+
+# Create a new dataset with the averaged data
+averaged_ds = xr.Dataset({
+    'uo': weighted_uo,
+    'vo': weighted_vo
+})
+
+# Add attributes
+averaged_ds['uo'].attrs = uo.attrs
+averaged_ds['vo'].attrs = vo.attrs
+averaged_ds.attrs = ds.attrs
+
+# Save the averaged data to a new netCDF file
+output_file_averaged      = f'{filename_in_json}_averaged.nc'
+output_file_path_averaged = os.path.join(satellite_dir, output_file_averaged)
+averaged_ds.to_netcdf(output_file_path_averaged)
+
+# Save the dataset to a new NetCDF file
+output_file_1000m = f'{filename_in_json}_1000m.nc'
+output_file_path_1000m = os.path.join(satellite_dir, output_file_1000m)
+ds_1000m.to_netcdf(output_file_path_1000m)
+
+# Add new filenames to the JSON file
+new_filenames = [output_file_averaged, output_file_1000m]
+filenames.extend(new_filenames)
+
+# Add new filenames to the JSON file under "processed data" category
+if 'processed data' not in data:
+    data['processed data'] = []
+
+new_filenames = [output_file_averaged, output_file_1000m]
+data['processed data'].extend(new_filenames)
+
+with open(json_file, 'w') as f:
+    json.dump(data, f, indent=4)
+
+print(f"DAC saved to {output_file_path_averaged}")
+print(f"1000m currents saved to {output_file_path_1000m}")
+print(f"Updated filenames saved to {json_file}")

@@ -12,7 +12,7 @@ fi
 
 # Execute the MATLAB script
 echo "Running MATLAB script..."
-matlab -nodisplay -nosplash -r "run('C:\Users\flapet\OneDrive - NOC\Documents\NRT_viz\biocarbon_nrt_data_viz\Data\Floats\bin_files\parse_provor_messages.m'); exit;"
+matlab -nodisplay -nosplash -nodesktop -r "run('C:\Users\flapet\OneDrive - NOC\Documents\NRT_viz\biocarbon_nrt_data_viz\Data\Floats\bin_files\parse_provor_messages.m'); exit;"
 
 # Check if the MATLAB script executed successfully
 if [ $? -ne 0 ]; then

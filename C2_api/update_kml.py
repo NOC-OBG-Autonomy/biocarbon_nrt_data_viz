@@ -19,23 +19,23 @@ gliders = ['unit_345', 'unit_397', 'unit_398', 'unit_405']
 #Unit 345
 print(f"Unit 345 traj updating...")
 data = get_positions(config.token, 'slocum', 'unit_345')
-create_kml_line(data, 'unit_345_traj.kml', simplekml.Color.purple)
+create_kml_line(data, 'C:/Users/flapet/OneDrive - NOC/DY180_NRT_plots/Google Earth Files/unit_345_traj.kml', simplekml.Color.purple)
 
 #Unit 397
 print(f"Unit 397 traj updating...")
 data = get_positions(config.token, 'slocum', 'unit_397')
-create_kml_line(data, 'unit_397_traj.kml', simplekml.Color.orange)
+create_kml_line(data, 'C:/Users/flapet/OneDrive - NOC/DY180_NRT_plots/Google Earth Files/unit_397_traj.kml', simplekml.Color.orange)
 
 #Unit 398
 print(f"Unit 398 traj updating...")
 data = get_positions(config.token, 'slocum', 'unit_398')
-create_kml_line(data, 'unit_398_traj.kml', simplekml.Color.green)
+create_kml_line(data, 'C:/Users/flapet/OneDrive - NOC/DY180_NRT_plots/Google Earth Files/unit_398_traj.kml', simplekml.Color.green)
 
 
 #unit 405
 print(f"Unit 405 traj updating...")
 data = get_positions(config.token, 'slocum', 'unit_405')
-create_kml_line(data, 'unit_405_traj.kml', simplekml.Color.blue)
+create_kml_line(data, 'C:/Users/flapet/OneDrive - NOC/DY180_NRT_plots/Google Earth Files/unit_405_traj.kml', simplekml.Color.blue)
 
 
 currents = get_observations(config.token, 'slocum', gliders, variables = ["m_water_vy", "m_water_vx", "m_lat", "m_lon", "m_time"])
@@ -65,7 +65,7 @@ for i in gliders:
     lat_list.append(lat_v)
 
 
-create_kml_point(gliders, lon_list, lat_list, u_list, v_list, 'last_pos.kml')
+create_kml_point(gliders, lon_list, lat_list, u_list, v_list, 'C:/Users/flapet/OneDrive - NOC/DY180_NRT_plots/Google Earth Files/last_pos.kml')
 
 print(f"Making a csv...")
 
@@ -131,7 +131,7 @@ ax.set_axis_off()
 #cbar.set_label(r'Depth averaged current (m s$^{-1}$)', rotation=270, labelpad=15)
 
 #save the plot and then close it to avoid high memory usage
-plt.savefig('gliders_dac.png', transparent = True)
+plt.savefig('C:/Users/flapet/OneDrive - NOC/DY180_NRT_plots/Google Earth Files/py_kml output/gliders_dac.png', transparent = True)
 plt.clf()
 plt.close()
 

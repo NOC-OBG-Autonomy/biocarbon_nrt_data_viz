@@ -106,7 +106,7 @@ object_symbols = {
 DAC_plot_lim_max = 0.5
 DAC_plot_lim_min = 0
 DAC_plot_as_log = False
-xx_day_offset = [-1]
+xx_day_offset = [-1,-2,-3,-4]
 
 # Load the filename from the JSON file
 json_file = os.path.join(parent_dir, 'downloaded_files.json')

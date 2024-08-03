@@ -79,7 +79,7 @@ while True:
 
     combined_positions = pd.concat([glider_position, floats_position])
 
-    #combined_position.to_csv('Plotting_tools/shared_data/rt_positions.csv')
+    combined_position.to_csv('Plotting_tools/shared_data/rt_positions.csv')
 
     print(f'position for all 3 components written in Plotting_tools/shared_data/rt_positions.csv')
 

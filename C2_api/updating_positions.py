@@ -12,11 +12,11 @@ from api_modules import *
 ##########################################
 ####### Waypoints ########################
 ##########################################
-waypoints = pd.read_csv('Data/Gliders/waypoints.csv')
-print(waypoints.head())
-waypoints['date'] = pd.to_datetime(waypoints['date'])
-waypoints['lon'] = -convert_series_to_decimal_degrees(waypoints['lon'])
-waypoints['lat'] = convert_series_to_decimal_degrees(waypoints['lat'])
+#waypoints = pd.read_csv('Data/Gliders/waypoints.csv')
+#print(waypoints.head())
+#waypoints['date'] = pd.to_datetime(waypoints['date'])
+#waypoints['lon'] = -convert_series_to_decimal_degrees(waypoints['lon'])
+#waypoints['lat'] = convert_series_to_decimal_degrees(waypoints['lat'])
 
 ############################################
 ######### Glider Position ##################
@@ -54,86 +54,87 @@ print(f'Glider position updated and formatted')
 ############################################
 ########## Ship position update ############
 ############################################
-if config.vpn_access == True:
-# CConfiguration of the MQTT broker
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-    client.username_pw_set(config.username, config.password)
-    client.on_connect = mqtt_connect
-    client.on_message = download_data
-
-    # Connexion to the broker
-    client.connect(config.broker, config.port, 60)
-
-    # Start the network loop in a separate thread
-    client.loop_start()
-
-    # Collect data for 1 seconds
-    time.sleep(1)
-
-    #Stop the network loop and disconnect
-    client.loop_stop()
-    client.disconnect()
-
-#########################################
-###  Ship Position dataframe     ########
-#########################################
-
-my_files = glob('Data/Ship_position/raw_msg/*')
-ship_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
-for file in my_files:
-    temp_df = json_to_csv_pos(file)
-    ship_position = pd.concat([ship_position if not ship_position.empty else None, temp_df], ignore_index=True)
-
-print(f'Ship position updated and formatted')
+#if config.vpn_access == True:
+## CConfiguration of the MQTT broker
+#    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+#    client.username_pw_set(config.username, config.password)
+#    client.on_connect = mqtt_connect
+#    client.on_message = download_data
+#
+#    # Connexion to the broker
+#    client.connect(config.broker, config.port, 60)
+#
+#    # Start the network loop in a separate thread
+#    client.loop_start()
+#
+#    # Collect data for 1 seconds
+#    time.sleep(1)
+#
+#    #Stop the network loop and disconnect
+#    client.loop_stop()
+#    client.disconnect()
+#
 ##########################################
-###### Float position dataframe ##########
+####  Ship Position dataframe     ########
 ##########################################
-
-my_files = glob('Data/Floats/cts5_emails/*')
-floats_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
-for file in my_files:
-    temp_df = email_to_csv_pos(file)
-    floats_position = pd.concat([floats_position if not floats_position.empty else None, temp_df], ignore_index=True)
-
-print(f'Float position updated and formatted')
-
-
+#
+#my_files = glob('Data/Ship_position/raw_msg/*')
+#ship_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
+#for file in my_files:
+#    temp_df = json_to_csv_pos(file)
+#    ship_position = pd.concat([ship_position if not ship_position.empty else None, temp_df], ignore_index=True)
+#
+#print(f'Ship position updated and formatted')
 ###########################################
-########### Respire dataframe ############
-##########################################
+####### Float position dataframe ##########
+###########################################
+#
+#my_files = glob('Data/Floats/cts5_emails/*')
+#floats_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
+#for file in my_files:
+#    temp_df = email_to_csv_pos(file)
+#    floats_position = pd.concat([floats_position if not floats_position.empty else None, temp_df], ignore_index=True)
+#
+#print(f'Float position updated and formatted')
+#
+#
+############################################
+############ Respire dataframe ############
+###########################################
+#
+#input_format = '%b %d %Y %I:%M:%S.%f %p'
+#
+#respire = pd.read_csv('Data/Respire/raw_location_respire.csv')
+#
+#respire['Datetime'] = pd.to_datetime(respire['Timestamp'], format=input_format)
+#
+## Ensure microseconds are dropped by converting to string and back to datetime without microseconds
+#respire['Datetime'] = respire['Datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
+#respire['Datetime'] = pd.to_datetime(respire['Datetime'], format='%Y-%m-%d %H:%M:%S')
+#
+#
+#respire_sel = respire[['Datetime', 'Longitude', 'Latitude']]
+#
+#colnames = ['date', 'lon', 'lat']
+#
+#respire_sel.columns = colnames
+#
+#respire_sel = respire_sel.copy()
+#
+#respire_sel.loc[:,'platform_type'] = 'respire'
+#respire_sel.loc[:,'platform_id'] = 'respire'
+#
+#print(f'respire position formatted')
+#
+###########################################
+######### Bind all the positions df #######
+###########################################
 
-input_format = '%b %d %Y %I:%M:%S.%f %p'
-
-respire = pd.read_csv('Data/Respire/raw_location_respire.csv')
-
-respire['Datetime'] = pd.to_datetime(respire['Timestamp'], format=input_format)
-
-# Ensure microseconds are dropped by converting to string and back to datetime without microseconds
-respire['Datetime'] = respire['Datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
-respire['Datetime'] = pd.to_datetime(respire['Datetime'], format='%Y-%m-%d %H:%M:%S')
-
-
-respire_sel = respire[['Datetime', 'Longitude', 'Latitude']]
-
-colnames = ['date', 'lon', 'lat']
-
-respire_sel.columns = colnames
-
-respire_sel = respire_sel.copy()
-
-respire_sel.loc[:,'platform_type'] = 'respire'
-respire_sel.loc[:,'platform_id'] = 'respire'
-
-print(f'respire position formatted')
-
-##########################################
-######## Bind all the positions df #######
-##########################################
-
-combined_position = pd.concat([ship_position, glider_position])
-combined_position = pd.concat([combined_position, floats_position])
-combined_position = pd.concat([combined_position, respire_sel])
-combined_position = pd.concat([combined_position, waypoints])
+combined_position = pd.concat([glider_position])
+#combined_position = pd.concat([ship_position, glider_position])
+#combined_position = pd.concat([combined_position, floats_position])
+#combined_position = pd.concat([combined_position, respire_sel])
+#combined_position = pd.concat([combined_position, waypoints])
 
 combined_position.to_csv('Plotting_tools/shared_data/rt_positions.csv')
 

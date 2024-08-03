@@ -1,0 +1,12 @@
+{
+    "filenames": [
+        "20240727_20240803_observed_currents.nc",
+        "20240727_20240803_model_currents.nc",
+        "20240727_20240803_model_currents_averaged.nc",
+        "20240727_20240803_model_currents_1000m.nc"
+    ],
+    "processed data": [
+        "20240727_20240803_model_currents_averaged.nc",
+        "20240727_20240803_model_currents_1000m.nc"
+    ]
+}

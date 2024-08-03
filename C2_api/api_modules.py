@@ -9,9 +9,15 @@ import time
 import os
 from glob import glob
 import io
-def get_positions(token, platform_type, platform_serial):
-    api_url = "https://api.c2.noc.ac.uk/positions/positions" 
+import simplekml
 
+
+def get_positions(token, platform_type, platform_serial, test = False):
+    
+    if test == False:
+        api_url = "https://api.c2.noc.ac.uk/positions/positions" 
+    if test == True :
+        api_url = "https://api-test.c2.noc.ac.uk/positions/positions" 
 
     # Headers including the token
     headers = {
@@ -20,7 +26,9 @@ def get_positions(token, platform_type, platform_serial):
 
     params = {
     "platform_type": platform_type,
-    "platform_serial": platform_serial
+    "platform_serial": platform_serial,
+    "from": "2024-05-28T18:57",
+    "time_order" : "descending"
     }
 
     # Making my query
@@ -42,6 +50,77 @@ def convert_positions(json_pos):
     my_pos = data['positions'].iloc[0]
     data_cleaned = pd.DataFrame(my_pos)
     return(data_cleaned)
+
+def get_last_coordinates(data):
+    """
+    Extract the last latitude and longitude from the JSON response.
+
+    Args:
+    data: JSON response in dictionary format.
+
+    Returns:
+    Tuple containing the last latitude and longitude.
+    """
+    # Extract the list of positions
+    positions = data['positions']['internal']
+    
+    # Get the last position
+    last_position = positions[0]
+    
+    # Extract the latitude and longitude
+    last_latitude = last_position['latitude']
+    last_longitude = last_position['longitude']
+    
+    return last_latitude, last_longitude
+
+def create_kml_line(json_position, output_file, color):
+    kml = simplekml.Kml()
+
+    positions = json_position['positions']['internal']
+
+    positions_list = []
+    for coord in positions:
+        lon = coord['longitude']
+        lat = coord['latitude']
+
+        positions_list.append((lon, lat))
+    
+    ls = kml.newlinestring(name = "my test", coords = positions_list)
+
+    ls.style.linestyle.width = 3
+
+    ls.style.linestyle.color = color
+
+    #time = coord['time'].replace('T', ' ').replace('Z', '')
+    #point.timestamp.when = time
+
+    kml.save(output_file)
+
+def create_kml_point(glider, longitude, latitude, m_water_x, m_water_y, output_file):
+    """Create a kml file with points and description of currents
+
+    Args:
+        glider (list): A list of glider names
+        longitude (list): a list of longitudes, in degrees decimal
+        latitude (list): a list of latitudes, in degrees decimal
+        m_water_x (list): a list of DAC, u component
+        m_water_y (list): a list of DAC, v component
+        output_file (string): the path where the kml file will be saved
+    """
+    kml = simplekml.Kml()
+
+    for i in range(len(glider)):
+        glider_temp = glider[i]
+        lon_t = longitude[i]
+        lat_t = latitude[i]
+        u_t = m_water_x[i]
+        v_t = m_water_y[i]
+
+        point = kml.newpoint(name = glider_temp, coords = [(lon_t, lat_t)])
+        point.description = f"m_water_x : {u_t} \n m_water_y : {v_t}"
+    
+    kml.save(output_file)
+
 
 def mqtt_connect(client, userdata, flags, rc, properties):
     if rc == 0:
@@ -157,7 +236,7 @@ def json_to_csv_pos(filename):
 def read_cts_datetime(filepath):
     with open(filepath, 'r') as file:
         file_content = file.read()
-    datetime_pattern = r'UTC=(?:3D)?(\d{2}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})'
+    datetime_pattern = r'UTC=3D(\d{2}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})'
 
     match = re.search(datetime_pattern, file_content)
     
@@ -178,7 +257,7 @@ def read_cts_position(filepath):
     with open(filepath, 'r') as file:
         file_content = file.read()
     
-    pattern = r'Lat=(?:3D)?(?P<lat>\d{2})(?P<lat_min>\d{2}\.\d+)(?P<lat_dir>[NS]) Long=(?:3D)?(?P<lon>\d{3})(?P<lon_min>\d{2}\.\d+)(?P<lon_dir>[EW])'
+    pattern = r'Lat=3D(?P<lat>\d{2})(?P<lat_min>\d{2}\.\d+)(?P<lat_dir>[NS]) Long=3D(?P<lon>\d{3})(?P<lon_min>\d{2}\.\d+)(?P<lon_dir>[EW])'
     
     match = re.search(pattern, file_content)
     
@@ -232,7 +311,7 @@ def get_observations(token, platform_type, platform_serial, variables):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
-    "from": "2024-06-04T18:57",
+    "from": "2024-07-04T18:57",
     "variable": variables
     }
 

@@ -1,0 +1,34 @@
+{
+    "waypoints update" : {
+        "commit_message": "WP update on <datetime>",
+        "behaviours": [
+        {
+            "name": "Go to WP generated",  # or other name
+            "description": "<anything>",
+            "kind": "go_to_waypoint",
+            "created_at": "<datetime>",
+            "parameters":{
+                "target_position":{
+                        "latitude": <waypoint latitude in degree decimals>, # e.g. 10.0185953,
+                        "longitude": <waypoint longitude in degree decimals>, # e.g. -4.0183678
+                    }
+            },
+            "category": "behaviour"
+        }
+        ]
+    },
+
+    "Update log" : {
+        {
+            "message": "Waypoint generated in ID 2505 and version <plan_version> > new waypoints (X,Y)",
+            "tags": ["waypoint_generator"],
+            "reporter": "<insert bodc reporter>",
+            "campaign_id": 407,
+            "platform_type": "slocum",
+            "platform_serial": "unit_405",
+            "type": {
+                "ID": 1
+             }
+        }
+    }
+}

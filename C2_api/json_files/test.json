@@ -1,0 +1,41 @@
+{
+    "Bodies": [
+        {
+            "waypoints update": [
+                {
+                    "commit_message": "WP update on 2024-07-04 10:23",
+                    "behaviours": [
+                        {
+                            "name": "Go to WP generated",
+                            "description": "<anything>",
+                            "kind": "go_to_waypoint",
+                            "created_at": "2024-07-04 10:23",
+                            "parameters": {
+                                "target_position": {
+                                    "latitude": 55,
+                                    "longitude": 24
+                                }
+                            },
+                            "category": "behaviour"
+                        }
+                    ]
+                }
+            ],
+            "Update log": [
+                {
+                    "message": "Waypoints generated in ID 799 on 2024-07-04 10:23 new waypoints (24,55), 10834.91km away.",
+                    "tags": [
+                        "waypoint_generator"
+                    ],
+                    "reporter": "<insert bodc reporter>",
+                    "campaign_id": 1938,
+                    "platform_type": "slocum",
+                    "platform_serial": "unit_306",
+                    "type": {
+                        "ID": 1
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -15,7 +15,7 @@ config_link = open(config_file, 'r')
 config = yaml.safe_load(config_link)
 
 paths = config['directories-paths']
-varlist = config['variables_to_plot']
+
 #download the bio index file, which provide dac paths for downloading float data
 floats_list = config['floats_wmo']
 
@@ -28,6 +28,7 @@ index_table = index_table.with_columns(
 )
 
 for float_wmo in floats_list:
+    varlist = config['variables_to_plot']
     fn.create_missing_directories(float_wmo, varlist)
 
     wmo_table = index_table.filter(pl.col('wmo') == float_wmo)
@@ -54,17 +55,17 @@ for float_wmo in floats_list:
         var_series = var_series.dropna()
         if len(var_series) == 0:
             print(var + " has only NA values")
-        else :    
+        elif var not in ['JULD', 'PRES'] :    
             xmax = max(var_series)
             if var == 'CHLA_ADJUSTED':
-                xmax = 1.5
+                xmax = 3
             if var == 'CHLA':
-                xmax == 1.5
+                xmax = 6
             if var == 'BBP700_ADJSUTED':
                 xmax = 0.005
-            if var == 'BBp700':
-                xmax == 0.005
+            if var == 'BBP700':
+                xmax = 0.005
             for prof in df['N_PROF'].unique():
-                if prof > 35:
+                if prof > 0:
                     data_to_plot = df[df['N_PROF'] <= prof]
                     fn.plot_profile(data_to_plot, var, xmax, float_wmo, pres_adjusted = False)

@@ -35,7 +35,7 @@ git clone https://github.com/NOC-OBG-Autonomy/biocarbon_nrt_data_viz.git
 The best practice to work with python is to create virtual environment or conda environment. Create one by running 
 
 ```
-pyton -m venv nrt_autonomy_env
+python -m venv nrt_autonomy_env
 ```
 
 You can then activate your venv by typing for windows users :

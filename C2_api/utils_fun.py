@@ -123,6 +123,8 @@ def find_profiles_by_depth(db, tsint=2, winsize=10):
     # profile_switch_times = self.adjust_inflections(depth, time_)
     profile_switch_times = adjust_inflections(depth, time_, inflection_times)
 
+    
+
     # use the time range to gather indices for each profile
     for ii in range(len(profile_switch_times)-1):
         pstart = profile_switch_times[ii]
@@ -135,7 +137,9 @@ def find_profiles_by_depth(db, tsint=2, winsize=10):
             continue
         indices.append(profile_ii)
     
-    return(indices)
+    surfaces = find_surfacing(indices, depth)
+
+    return(surfaces)
 
 def adjust_inflections(depth, time_, inflection_times):
     """Filters out bad inflection points.
@@ -188,14 +192,41 @@ def adjust_inflections(depth, time_, inflection_times):
 
     return inflection_times
 
+def find_surfacing(prof_indexes, depth):
+    """Filters out bad inflection points.
 
+    Bad inflection points are small surface, bottom of dive, or mid-profile
+    wiggles that are not associated with true dive or climb inflections.
+    These false inflections are removed so that when profile indices are
+    created, they don't separate into separate small profiles.
+
+    :param depth:
+    :param time_:
+    :return:
+    """
+    depth_ii = 0
+    fwd_counter = 10
+    surface = []
+    for i in range(len(prof_indexes)):
+        profile_depth = depth[prof_indexes[i]]
+        while depth_ii < len(profile_depth):
+            ii_depth = depth[depth_ii]  # depth of current inflection
+            # look ahead for the next true inflection change
+            if ii_depth + fwd_counter >= len(profile_depth):
+                break
+            if abs(profile_depth[depth_ii + fwd_counter] - ii_depth) < 2:
+                surface.append(depth_ii)
+                if depth_ii + fwd_counter >= len(profile_depth):
+                    break
+            depth_ii += 1
+    return(surface)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     path = 'C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/Doombar_648_R.nc'
     dat = xr.open_dataset(path)
     prof  = find_profiles_by_depth(path)
-    prof_165 = prof[34]
+    prof_165 = prof[165]
     pres = dat['PRES'][prof_165].values
     time = dat['TIME'][prof_165].values
     # Identify indices of valid and NaN values

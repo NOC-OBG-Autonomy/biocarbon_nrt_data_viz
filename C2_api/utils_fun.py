@@ -1,6 +1,8 @@
 import xarray as xr
 import numpy as np
 from scipy import signal 
+from tqdm import tqdm
+
 def boxcar_smooth_dataset(dataset, window_size):
     """Smooth data with a simple box car filter
     """
@@ -10,28 +12,20 @@ def boxcar_smooth_dataset(dataset, window_size):
 def find_profiles_by_depth(db, tsint=2, winsize=10):
     """Discovery of profiles in a glider segment using depth and time.
 
-    Profiles are discovered by smoothing the depth timeseries and using the
-    derivative of depth vs time to find the inflection points to break
-    the segment into profiles.  Profiles are truncated to where science
-    data exists; science sensors for the glider are configured in
-    Configuration.py.
-    Depth can be `DEPTH_SENSOR` as configured in configuration.py or
-    CTD pressure (Default `DEPTH_SENSOR`).  For smoothing
-    a filtered depth is created at regular time intervals `tsint` (default
+    Profiles are discovered by smoothing the depth (pressure) timeseries and using the
+    derivative of depth vs time (or N_MEASUREMENTS index) to find the inflection points to break
+    the segment into profiles. The surfacing behaviour is detected and removed from the profile index.
+    For smoothing a filtered depth is created at regular time intervals `tsint` (default
     2 secs) and boxcar filtered with window `winsize` (default 5 points).
     The smoothing is affected by both choice of `tsint` and `winsize`, but
     usually still returns similar profiles.  After profiles are discovered,
     they should be filtered with the `filter_profiles` method of this
     class, which removes profiles that are not true profiles.
 
-    :param depth_sensor: The Depth sensor to use for profile discovery.
-    Should be either the configured `DEPTH_SENSOR`, or CTD pressure
-    `PRESSURE_SENSOR` (configured in configuration.py), or a
-    derivative of those 2.  Default is `DEPTH_SENSOR`
-    :param tsint: Time interval in seconds for filtered depth.
-    This affects filtering.  Default is 2.
-    :param winsize: Window size for boxcar smoothing filter.
-    :return: output is a list of profile indices in self.indices
+    Args:
+        db (string): The path of the OG1 format data
+        tsint (integer): interval of smoothing
+        winsize (integer): window of smoothing
     """
     indices = []
 
@@ -137,9 +131,18 @@ def find_profiles_by_depth(db, tsint=2, winsize=10):
             continue
         indices.append(profile_ii)
     
-    surfaces = find_surfacing(indices, depth)
+    surfaces = find_surfacing(indices, depth, time_)
 
-    return(surfaces)
+    profiles = []
+
+    for prof_number in range(len(indices)):
+        prof = indices[prof_number]
+        pos = surfaces[prof_number]
+
+        prof = np.delete(prof, pos)
+        profiles.append(prof)
+
+    return(profiles)
 
 def adjust_inflections(depth, time_, inflection_times):
     """Filters out bad inflection points.
@@ -149,9 +152,14 @@ def adjust_inflections(depth, time_, inflection_times):
     These false inflections are removed so that when profile indices are
     created, they don't separate into separate small profiles.
 
-    :param depth:
-    :param time_:
-    :return:
+    Args:
+        depth (array): pressure array from the OG1 format
+        time_ (array): N_MEASUREMENTS array from the OG1 format
+        inflection_times: inflection points detected by find_profile_by_depth function
+    
+    Return:
+        An array of true inflection points
+
     """
     inflections = inflection_times
     inflection_depths = np.interp(
@@ -192,34 +200,52 @@ def adjust_inflections(depth, time_, inflection_times):
 
     return inflection_times
 
-def find_surfacing(prof_indexes, depth):
-    """Filters out bad inflection points.
+def find_surfacing(prof_indexes, depth, itime, fwd_counter = 10, threshold = 2):
+    """Identify indexes of surfacing behaviour (i.e. a slow vertical speed from the glider). It is not based on the absolute depth, so it can identify deep 'surfacing behavior'.
+    Returns a 2D array of surfacing behavior in each profile. 
 
-    Bad inflection points are small surface, bottom of dive, or mid-profile
-    wiggles that are not associated with true dive or climb inflections.
-    These false inflections are removed so that when profile indices are
-    created, they don't separate into separate small profiles.
-
-    :param depth:
-    :param time_:
-    :return:
+    Args:
+        prof_indexes (2D array): array of n,m shapes where n is the number of profiles, it is the output from find_profiles_by_depth
+        depth (array): The depth values (actually pressure)
+        itime (array): A numeric index of the observations, for OG1 format it is N_MEASUREMENTS
+        fwd_counter (integer): An integer corresponding to the delta number of observation on which we base our surface behavior detection
+        threshold (integer): An integer corresponding to the maximal change in pressure to detect a surfacing behavior
     """
-    depth_ii = 0
-    fwd_counter = 10
-    surface = []
-    for i in range(len(prof_indexes)):
-        profile_depth = depth[prof_indexes[i]]
-        while depth_ii < len(profile_depth):
-            ii_depth = depth[depth_ii]  # depth of current inflection
-            # look ahead for the next true inflection change
-            if ii_depth + fwd_counter >= len(profile_depth):
-                break
-            if abs(profile_depth[depth_ii + fwd_counter] - ii_depth) < 2:
+    surfaces = []
+
+    # Find indices with finite (non-NaN) depths
+    depth_ii = np.flatnonzero(np.isfinite(depth))
+    neg_depths = np.flatnonzero(depth[depth_ii] <= 0)
+    depth[depth_ii[neg_depths]] = np.nan
+
+    # Recompute finite indices after replacing depths <= 0 with NaN
+    depth_ii = np.flatnonzero(np.isfinite(depth))
+
+    # Interpolate the depths for the measurements
+    idepth = np.interp(itime, itime[depth_ii], depth[depth_ii],
+                    left=depth[depth_ii[0]], right=depth[depth_ii[-1]])
+    fz = boxcar_smooth_dataset(idepth, 10)
+
+    for i in tqdm(range(len(prof_indexes))):
+        profile_depth = fz[prof_indexes[i]]
+        depth_ii = 0
+        surface = []
+
+        while depth_ii < (len(profile_depth) - fwd_counter):
+            # Check if the pressure changes minimally over the next `fwd_counter` points
+            if abs(profile_depth[depth_ii] - profile_depth[depth_ii + fwd_counter]) < threshold:
                 surface.append(depth_ii)
-                if depth_ii + fwd_counter >= len(profile_depth):
-                    break
-            depth_ii += 1
-    return(surface)
+                last_valid_depth = depth_ii  # Update to track the last valid `depth_ii`
+                depth_ii += 1  # Skip forward to avoid overlapping ranges
+            else:
+                depth_ii += 1
+
+        # After exiting the loop, append the last valid range if it exists
+        if last_valid_depth == depth_ii - 1:
+            surface.extend(list(range(last_valid_depth, last_valid_depth + fwd_counter + 1)))
+
+        surfaces.append(surface)
+    return(surfaces)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

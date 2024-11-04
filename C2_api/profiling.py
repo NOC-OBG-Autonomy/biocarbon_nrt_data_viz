@@ -247,19 +247,47 @@ def find_surfacing(prof_indexes, depth, itime, fwd_counter = 10, threshold = 2):
         surfaces.append(surface)
     return(surfaces)
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    path = 'C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/Doombar_648_R.nc'
-    dat = xr.open_dataset(path)
-    prof  = find_profiles_by_depth(path)
-    prof_165 = prof[165]
-    pres = dat['PRES'][prof_165].values
-    time = dat['TIME'][prof_165].values
+def interp_nan(var):
+    """Linear interpolation of any variable. Used to plot variables that are not observed on the same time. 
+
+    Args:
+        var (array): A 1D array of any numerical variable.
+    """    
     # Identify indices of valid and NaN values
-    nans = np.isnan(pres)
+    nans = np.isnan(var)
     valid = ~nans
 
-    # Interpolate the NaN values
-    pres[nans] = np.interp(np.flatnonzero(nans), np.flatnonzero(valid), pres[valid])
-    plt.plot(time, pres)
+    #Interpolate the NaN values
+    var[nans] = np.interp(np.flatnonzero(nans), np.flatnonzero(valid), var[valid])
+
+    return(var)
+
+if __name__ == '__main__':
+
+    #An example on how to split a OG1 in profiles and to look at specific profiles
+    import matplotlib.pyplot as plt
+
+    #Use Doombar data as example
+    path = 'C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/Doombar_648_R.nc'
+
+    #Open the netcdf
+    dat = xr.open_dataset(path)
+
+    #Find profiles, will return a 2D array of indexes corresponding to profiles
+    prof  = find_profiles_by_depth(path)
+
+    #We can extract a 1D array of any profile based on the number of that profile (e.g. number 165)
+    prof_165 = prof[165]
+
+    #Then, we use the prof_165 to extract any variables we want to look
+    pres = dat['PRES'][prof_165].values
+    time = dat['TIME'][prof_165].values
+    chla = dat['CHLA'][prof_165].values
+    
+    #There is a simple interpolation function above to match the same grid between pressure and variables
+    chla = interp_nan(chla)
+    pres = interp_nan(pres)
+
+    #Simple plot
+    plt.plot(chla, -pres)
     plt.show() 

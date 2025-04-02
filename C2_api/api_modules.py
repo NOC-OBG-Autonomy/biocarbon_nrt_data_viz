@@ -311,12 +311,19 @@ def get_observations(token, platform_type, platform_serial, variables):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
+<<<<<<< Updated upstream
     "from": "2024-07-04T18:57",
+=======
+    "from": "2024-09-01T00:00",
+    "to": "2024-09-30T00:00",
+>>>>>>> Stashed changes
     "variable": variables
     }
 
     # Making my query
     response = requests.get(api_url, headers=headers, params = params)
+
+    print(f'Downloading {platform_serial} data...')
 
     # Check the status code of the response
     if response.status_code == 200:
@@ -331,5 +338,14 @@ def get_observations(token, platform_type, platform_serial, variables):
 
 if __name__ == '__main__':
 
+<<<<<<< Updated upstream
     test = get_observations(config.token, 'slocum', ['unit_397', 'unit_405', 'unit_398', 'unit_345'], variables = ["m_water_vy", "m_water_vx", "m_lat", "m_lon", "m_time"])
     test.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/current.csv')
+=======
+    # test = get_observations(config.token, 'slocum', ['unit_397', 'unit_405', 'unit_398', 'unit_345'], variables = ["m_water_vy", "m_water_vx", "m_lat", "m_lon", "m_time"])
+    # test.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/current.csv')
+
+    #DOcumentation : https://api.c2.noc.ac.uk/timeseries/doc
+    ts = get_observations(config.token, 'slocum', ['unit_397', 'unit_405', 'unit_398', 'unit_345'], variables=["sci_water_pressure", "sci_water_temp",  "sci_water_cond", "m_lon", "m_lat", "sci_flbbcd_chlor_units", "sci_flbbcd_bb_units", "m_time"])
+    ts.to_csv('C:/Users/hanshil/OneDrive - NOC/Documents/PARTITRICS/GliderData/20240901_20240930_glider_ts_.csv')
+>>>>>>> Stashed changes

@@ -21,7 +21,7 @@ from api_modules import *
 ############################################
 ######### Glider Position ##################
 ############################################
-gliders_id_list = ['unit_397', 'unit_405', 'unit_398', 'unit_345']
+gliders_id_list = ['unit_306', 'unit_352', 'unit_408', 'unit_436']
 glider_position = pd.DataFrame({'date' : [], 'lon' : [], 'lat' : [], 'platform_type' : str(), 'platform_id' : str()})
 
 for glider_id in gliders_id_list :

@@ -35,7 +35,7 @@ def get_positions(token, platform_type, platform_serial, test = False):
     response = requests.get(api_url, headers=headers, params = params)
 
     # Check the status code of the response
-    if response.status_code == 200:
+    if response.status_code== 200:
         # Successful request
         data = response.json()
         return(data[0])

@@ -60,21 +60,22 @@ satellite_dir = os.path.join(data_dir, 'satellite')
 current_day = datetime.now()
 end_timelabel = current_day.strftime("%Y%m%d")
 end_time    = current_day.strftime("%Y-%m-%dT%H:%M:%S")
-start_time  = current_day - timedelta(days=7)
+start_time  = current_day - timedelta(days=4)
 start_timelabel = start_time.strftime("%Y%m%d")
-start_time  = start_time.strftime("%Y-%m-%dT%H:%M:%S")
+start_time  = start_time.strftime("%Y-%m-%dT%H:%M:%S")yield
 
 # Geographical bounds
-min_lon   = -35
-max_lon   = -5
-min_lat   = 55
+min_lon   = -57
+max_lon   = -44
+min_lat   = 58
 max_lat   = 66
 min_depth = 0
 max_depth = 1000
 
 # List of datasets to extract
 datasets_to_extract = [
-    'cmems_obs-sl_eur_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D', # currents   (higher res, low(ish) scope)
+    #'cmems_obs-sl_eur_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D', # currents   (higher res, low(ish) scope)
+    'cmems_obs-mob_glo_phy-cur_nrt_0.25deg_P1D-m',                # currents   (low res, high scope)
     'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m']                 # currents   (modelled product)
 
 # JSON file to store the filenames

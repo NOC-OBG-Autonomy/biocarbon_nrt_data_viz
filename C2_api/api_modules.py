@@ -311,8 +311,36 @@ def get_observations(token, platform_type, platform_serial, variables):
     params = {
     "platform_type": platform_type,
     "platform_serial": platform_serial,
-    "from": "2024-09-01T18:57",
+    "from": "2025-08-13T18:57",
     "variable": variables
+    }
+
+    # Making my query
+    response = requests.get(api_url, headers=headers, params = params)
+
+    # Check the status code of the response
+    if response.status_code == 200:
+        # Successful request
+        data = response.content.decode('utf-8')
+        df = pd.read_csv(io.StringIO(data))
+        return(df)
+    else:
+        # Handle errors
+        print(f"Error: {response.status_code}")
+        print(response.text)
+
+def get_variables_list(token, platform_type, platform_serial):
+    api_url = "https://api.c2.noc.ac.uk/timeseries/meta/variables" 
+
+
+    # Headers including the token
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    params = {
+    "platform_type": platform_type,
+    "platform_serial": platform_serial
     }
 
     # Making my query
@@ -335,5 +363,46 @@ if __name__ == '__main__':
     # test.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/current.csv')
 
     #DOcumentation : https://api.c2.noc.ac.uk/timeseries/doc
-    ts = get_observations(config.token, 'slocum', 'unit_345', variables=["sci_water_pressure", "sci_water_temp",  "sci_water_cond", "m_lon", "m_lat", "sci_flbbcd_chlor_units", "sci_flbbcd_bb_units", "m_time"])
-    ts.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/glider_ts_345.csv')
+    
+    #varlist = get_variables_list(config.token, 'slocum', 'unit_927')
+    #varlist.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/varlist_927.csv')
+
+    vars = ["sci_flbbbbv1_fl_scaled",
+    "sci_flbbbbv1_bb1_scaled",
+    "sci_flbbbbv1_bb2_scaled",
+    "sci_flbbcd_bb_units",
+    "sci_flbbcd_chlor_units",
+    "sci_flbbcd_cdom_units",
+    "sci_oxy4_calphase",
+    "sci_oxy4_oxygen",
+    "sci_rbrctd_cond_cell_temp_00",
+    "sci_rbrctd_conductivity_00",
+    "sci_rbrctd_count_00",
+    "sci_rbrctd_depth_00",
+    "sci_rbrctd_is_installed",
+    "sci_rbrctd_pressure_00",
+    "sci_rbrctd_salinity_00",
+    "sci_rbrctd_seapressure_00",
+    "sci_rbrctd_temperature_00",
+    "sci_rbrtridente_ch1_sig",
+    "sci_rbrtridente_ch2_sig",
+    "sci_rbrtridente_ch3_sig",
+    "sci_rbrtridente_interval",
+    "sci_water_cond",
+    "sci_water_pressure",
+    "sci_water_temp",
+    "m_water_depth",
+    "m_water_pressure",
+    "m_water_temp",
+    "m_gps_lat",
+    "m_gps_lon",
+    "sci_systime",
+    "m_lon",
+    "m_lat",
+    "m_science_sync_time",
+    "m_time",
+    "c_time_sync",
+    ]
+
+    ts = get_observations(config.token, 'slocum', 'unit_927', variables= vars)
+    ts.to_csv('C:/Users/flapet/OneDrive - NOC/Documents/NRT_viz/biocarbon_nrt_data_viz/Data/Gliders/glider_ts_927.csv')
